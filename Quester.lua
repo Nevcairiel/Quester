@@ -79,7 +79,7 @@ end
 local items, mobs, progress = {}, {}, {}
 local table_cache = {}
 local complete, oldcomplete = {}, {}
-local quests = {}
+local quests, oldquests = {}, {}
 
 local first = true
 function Quester:OnInitialize()
@@ -110,6 +110,11 @@ local function emptyAll()
 		oldcomplete[k] = v
 		complete[k] = nil
 	end
+	wipe(oldquests)
+	for k, v in pairs(quests) do
+		oldquests[k] = v
+		quests[k] = nil
+	end
 	for k, v in pairs(progress) do
 		if type(v) == "table" then
 			wipe(v)
@@ -129,7 +134,6 @@ end
 function Quester:QUEST_LOG_UPDATE()
 	-- clear previous data cache
 	emptyAll()
-	wipe(quests)
 
 	-- store previous selection, so we can restore it
 	local startingQuestLogSelection = GetQuestLogSelection()
@@ -212,7 +216,7 @@ function Quester:QUEST_LOG_UPDATE()
 						if objComplete then
 							complete[c] = true
 						end
-						if not first and not complete[title] and objComplete and not oldcomplete[c] then
+						if not first and not complete[title] and objComplete and not oldcomplete[c] and (not isTask or oldquests[title]) then
 							if db.morework then
 								PlaySoundFile("Sound\\Creature\\Peasant\\PeasantWhat3.wav")
 							end
