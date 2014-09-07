@@ -28,12 +28,12 @@ do
 		ObjectPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
 	end
 
-	local one, two, three = QUEST_MONSTERS_KILLED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
+	one, two, three = QUEST_MONSTERS_KILLED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
 	if one and two and three then
 		MonsterPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
 	end
 
-	local one, two, three = QUEST_FACTION_NEEDED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
+	one, two, three = QUEST_FACTION_NEEDED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
 	if one and two and three then
 		FactionPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
 	end
