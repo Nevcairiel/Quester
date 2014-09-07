@@ -116,6 +116,8 @@ function Quester:OnEnable()
 
 	--self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
+	self:SecureHook(QUEST_TRACKER_MODULE, "SetBlockHeader", "QuestTrackerSetHeader")
+	self:SecureHook("QuestLogQuests_Update")
 
 	self:EnvironmentProxy()
 	self:QUEST_LOG_UPDATE()
@@ -280,30 +282,41 @@ function Quester:OnTooltipSetUnit(tooltip, ...)
 	end
 end
 
-local function WrappedGetQuestWatchInfo(...)
-	local questID, title, questLogIndex, numObjectives, requiredMoney, isComplete, startEvent, isAutoComplete, failureTime, timeElapsed, questType, isTask, isStory, isOnMap, hasLocalPOI = GetQuestWatchInfo(...)
-	if questLogIndex then
-		local newTitle = GetTaggedTitle(questLogIndex, true)
-		title = newTitle or title
+function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
+	text = GetTaggedTitle(questLogIndex, true)
+	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
+	print(issecurevariable(block, "questLogIndex"))
+end
+
+function Quester:QuestLogQuests_Update()
+	for i = 1, #QuestMapFrame.QuestsFrame.Contents.Titles do
+		local title = QuestMapFrame.QuestsFrame.Contents.Titles[i]
+		if title and title:IsShown() then
+			local text = GetTaggedTitle(title.questLogIndex, false)
+
+			local partyMembersOnQuest = 0;
+			for j=1, GetNumSubgroupMembers() do
+				if IsUnitOnQuestByQuestID(title.questID, "party"..j) then
+					partyMembersOnQuest = partyMembersOnQuest + 1
+				end
+			end
+
+			if ( partyMembersOnQuest > 0 ) then
+				text = "["..partyMembersOnQuest.."] "..text
+			end
+			title.Text:SetText(text)
+		end
 	end
-	return questID, title, questLogIndex, numObjectives, requiredMoney, isComplete, startEvent, isAutoComplete, failureTime, timeElapsed, questType, isTask, isStory, isOnMap, hasLocalPOI
 end
 
 function Quester:EnvironmentProxy()
 	local env = setmetatable({
-		GetQuestWatchInfo = function(...)
-			return WrappedGetQuestWatchInfo(...)
-		end,
 		GetQuestLogTitle = function(index)
 			return GetTaggedTitle(index, false)
 		end,
 	}, {__index = _G})
 
-	-- tracking
-	setfenv(QUEST_TRACKER_MODULE.Update, env)
-
 	-- quest log/map
-	setfenv(QuestLogQuests_Update, env)
 	setfenv(WorldMapQuestPOI_SetTooltip, env)
 	setfenv(WorldMapQuestPOI_AppendTooltip, env)
 end
