@@ -65,6 +65,28 @@ local function MatchFaction(description)
 	end
 end
 
+-- utility functions
+local function rgb2hex(r, g, b)
+	if type(r) == "table" then
+		g = r.g
+		b = r.b
+		r = r.r
+	end
+	return format("%02x%02x%02x", r*255, g*255, b*255)
+end
+
+local function GetTaggedTitle(i, color)
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
+	if not isHeader and title then
+		if color then
+			title = string.format("|cff%s[%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, title)
+		else
+			title = string.format("[%s] %s", level, title)
+		end
+	end
+	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory
+end
+
 -- faction data for reputation quests
 local factionLabels = {}
 do
@@ -92,6 +114,10 @@ end
 function Quester:OnEnable()
 	self:RegisterEvent("QUEST_LOG_UPDATE")
 
+	--self:HookScript(GameTooltip, "OnTooltipSetItem")
+	self:HookScript(GameTooltip, "OnTooltipSetUnit")
+
+	self:EnvironmentProxy()
 	self:QUEST_LOG_UPDATE()
 end
 
@@ -230,4 +256,54 @@ function Quester:QUEST_LOG_UPDATE()
 
 	-- restore previous questlog selection
 	SelectQuestLogEntry(startingQuestLogSelection)
+end
+
+local lines = {}
+do
+	local i = 1
+	repeat
+		lines[i] = _G["GameTooltipTextLeft"..i]
+		i = i + 1
+	until not _G["GameTooltipTextLeft"..i]
+end
+
+function Quester:OnTooltipSetUnit(tooltip, ...)
+	local numLines = tooltip:NumLines()
+	for i = 1, numLines do
+		if lines[i] then
+			local text = lines[i]:GetText()
+			if quests[text] then
+				lines[i]:SetText(GetTaggedTitle(quests[text], true))
+				tooltip:Show()
+			end
+		end
+	end
+end
+
+local function WrappedGetQuestWatchInfo(...)
+	local questID, title, questLogIndex, numObjectives, requiredMoney, isComplete, startEvent, isAutoComplete, failureTime, timeElapsed, questType, isTask, isStory, isOnMap, hasLocalPOI = GetQuestWatchInfo(...)
+	if questLogIndex then
+		local newTitle = GetTaggedTitle(questLogIndex, true)
+		title = newTitle or title
+	end
+	return questID, title, questLogIndex, numObjectives, requiredMoney, isComplete, startEvent, isAutoComplete, failureTime, timeElapsed, questType, isTask, isStory, isOnMap, hasLocalPOI
+end
+
+function Quester:EnvironmentProxy()
+	local env = setmetatable({
+		GetQuestWatchInfo = function(...)
+			return WrappedGetQuestWatchInfo(...)
+		end,
+		GetQuestLogTitle = function(index)
+			return GetTaggedTitle(index, false)
+		end,
+	}, {__index = _G})
+
+	-- tracking
+	setfenv(QUEST_TRACKER_MODULE.Update, env)
+
+	-- quest log/map
+	setfenv(QuestLogQuests_Update, env)
+	setfenv(WorldMapQuestPOI_SetTooltip, env)
+	setfenv(WorldMapQuestPOI_AppendTooltip, env)
 end
