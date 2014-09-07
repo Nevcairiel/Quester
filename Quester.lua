@@ -20,39 +20,49 @@ local objects_pattern = '^' .. QUEST_OBJECTS_FOUND:gsub('(%%%d?$?.)', '(.-)') ..
 local monsters_pattern = '^' .. QUEST_MONSTERS_KILLED:gsub('(%%%d?$?.)', '(.-)') .. '$' --QUEST_MONSTERS_KILLED = "%s slain: %d/%d"
 local faction_pattern = '^' .. QUEST_FACTION_NEEDED:gsub('(%%%d?$?.)', '(.-)') .. '$' --QUEST_FACTION_NEEDED = "%s: %s / %s"
 
+-- "Deformat" the pattern to find their argument order
+local ObjectPermute, MonsterPermute, FactionPermute
+do
+	local one, two, three = QUEST_OBJECTS_FOUND:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
+	if one and two and three then
+		ObjectPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
+	end
+
+	local one, two, three = QUEST_MONSTERS_KILLED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
+	if one and two and three then
+		MonsterPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
+	end
+
+	local one, two, three = QUEST_FACTION_NEEDED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
+	if one and two and three then
+		FactionPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
+	end
+end
+
 -- match the object string
 -- returns name, num, needed
 local function MatchObject(description)
-	local a, b, c = description:match(objects_pattern)
-
-	-- %d/%d %s
-	if GetLocale() == "enUS" or GetLocale() == "enGB" then
-		return c, a, b
+	if ObjectPermute then
+		return ObjectPermute(description:match(objects_pattern))
+	else
+		return description:match(objects_pattern)
 	end
-	-- TODO: other locales
-	return c, a, b
 end
 
 local function MatchMonster(description)
-	local a, b, c = description:match(monsters_pattern)
-
-	-- %s slain: %d/%d
-	if GetLocale() == "enUS" or GetLocale() == "enGB" then
-		return a, b, c
+	if MonsterPermute then
+		return MonsterPermute(description:match(monsters_pattern))
+	else
+		return description:match(monsters_pattern)
 	end
-	-- TODO: other locales
-	return a, b, c
 end
 
 local function MatchFaction(description)
-	local a, b, c = description:match(faction_pattern)
-
-	-- %d/%d %s
-	if GetLocale() == "enUS" or GetLocale() == "enGB" then
-		return c, a, b
+	if FactionPermute then
+		return FactionPermute(description:match(faction_pattern))
+	else
+		return description:match(faction_pattern)
 	end
-	-- TODO: other locales
-	return c, a, b
 end
 
 -- faction data for reputation quests
