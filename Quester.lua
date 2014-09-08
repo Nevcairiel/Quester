@@ -290,13 +290,13 @@ end
 
 function Quester:QuestLogQuests_Update()
 	for i = 1, #QuestMapFrame.QuestsFrame.Contents.Titles do
-		local title = QuestMapFrame.QuestsFrame.Contents.Titles[i]
-		if title and title:IsShown() then
-			local text = GetTaggedTitle(title.questLogIndex, false)
+		local button = QuestMapFrame.QuestsFrame.Contents.Titles[i]
+		if button and button:IsShown() then
+			local text = GetTaggedTitle(button.questLogIndex, false)
 
 			local partyMembersOnQuest = 0;
 			for j=1, GetNumSubgroupMembers() do
-				if IsUnitOnQuestByQuestID(title.questID, "party"..j) then
+				if IsUnitOnQuestByQuestID(button.questID, "party"..j) then
 					partyMembersOnQuest = partyMembersOnQuest + 1
 				end
 			end
@@ -304,7 +304,22 @@ function Quester:QuestLogQuests_Update()
 			if ( partyMembersOnQuest > 0 ) then
 				text = "["..partyMembersOnQuest.."] "..text
 			end
-			title.Text:SetText(text)
+
+			-- store previous text height, so we can compute the new total height
+			local prevTextHeight = button.Text:GetHeight()
+
+			-- update text
+			button.Text:SetText(text)
+
+			-- re-anchor check mark
+			if button.Check:IsShown() then
+				button.Check:SetPoint("LEFT", button.Text, button.Text:GetWrappedWidth() + 2, 0);
+			end
+
+			-- compute new button height, in case text wrapping changed
+			local totalHeight = button:GetHeight()
+			totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
+			button:SetHeight(totalHeight)
 		end
 	end
 end
