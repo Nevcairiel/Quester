@@ -285,7 +285,8 @@ end
 function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
 	text = GetTaggedTitle(questLogIndex, true)
 	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
-	print(issecurevariable(block, "questLogIndex"))
+	-- taint check
+	--print(issecurevariable(block, "questLogIndex"))
 end
 
 function Quester:QuestLogQuests_Update()
