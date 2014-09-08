@@ -263,7 +263,10 @@ function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
 	text = GetTaggedTitle(questLogIndex, true)
 	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
 	-- taint check
-	--print(issecurevariable(block, "questLogIndex"))
+	local isSecure, addon = issecurevariable(block, "questLogIndex")
+	if not isSecure then
+		print("Quest Tracker tainted by " .. tostring(addon))
+	end
 end
 
 function Quester:QuestLogQuests_Update()
