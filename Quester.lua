@@ -1,4 +1,4 @@
-local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceEvent-3.0", "AceHook-3.0", "LibSink-2.0")
+local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 
 local db
 local defaults = {
@@ -11,7 +11,9 @@ local defaults = {
 		jobsdone = true,
 
 		-- sink
-		sinkOptions = {},
+		sinkOptions = {
+			sink20OutputSink = "UIErrorsFrame",
+		},
 	}
 }
 
@@ -75,12 +77,81 @@ local table_cache = {}
 local complete, oldcomplete = {}, {}
 local quests, oldquests = {}, {}
 
+local function getOptionsTable()
+	local options = {
+		type = "group",
+		name = "Quester",
+		get = function(k) return db[k.arg] end,
+		set = function(k, v) db[k.arg] = v end,
+		args = {
+			behaviorheader = {
+				type = "header",
+				name = "Behavior Configuration",
+				order = 1,
+			},
+			removeComplete = {
+				name = "Un-track complete quests",
+				desc = "Toogle if completing a quest should automatically remove it from the tracker.",
+				type = "toggle",
+				arg = "removeComplete",
+				order = 2,
+			},
+			soundheader = {
+				type = "header",
+				name = "Sound Configuration",
+				order = 10,
+			},
+			sounddesc = {
+				type = "description",
+				name = "Configure the sounds you want to hear with the toggles below.",
+				order = 11,
+			},
+			morework = {
+				name = "More Work?!",
+				desc = "Toggle playing the 'More Work?!' sound after completing an objective.",
+				type = "toggle",
+				arg = "morework",
+				order = 12,
+			},
+			jobsdone = {
+				name = "Job's Done!",
+				desc = "Toggle playing the 'Job's Done!' sound after completing a quest.",
+				type = "toggle",
+				arg = "jobsdone",
+				order = 13,
+			},
+			header = {
+				type = "header",
+				name = "Progress Output",
+				order = 20,
+			},
+			desc = {
+				type = "description",
+				name = "You can select where you want progress messages displayed using the options below.",
+				order = 21,
+			},
+			sink = Quester:GetSinkAce3OptionsDataTable(),
+		}
+	}
+
+	-- hack sink options into submission
+	options.args.sink.order = 22
+	options.args.sink.inline = true
+	options.args.sink.name = ""
+	return options
+end
+
 local first = true
 function Quester:OnInitialize()
-	self.db = LibStub("AceDB-3.0"):New("Quester", defaults, true)
+	self.db = LibStub("AceDB-3.0"):New("QuesterDB", defaults, true)
 	db = self.db.profile
 
 	self:SetSinkStorage(self.db.profile.sinkOptions)
+
+	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("Quester", getOptionsTable)
+	local optFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Quester", "Quester")
+
+	self:RegisterChatCommand("quester", function() InterfaceOptionsFrame_OpenToCategory(optFrame) end)
 end
 
 function Quester:OnEnable()
