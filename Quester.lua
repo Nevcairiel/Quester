@@ -15,11 +15,6 @@ local defaults = {
 	}
 }
 
--- pattern used for objective parsing
-local objects_pattern = '^' .. QUEST_OBJECTS_FOUND:gsub('(%%%d?$?.)', '(.-)') .. '$' --QUEST_OBJECTS_FOUND = "%s: %d/%d"
-local monsters_pattern = '^' .. QUEST_MONSTERS_KILLED:gsub('(%%%d?$?.)', '(.-)') .. '$' --QUEST_MONSTERS_KILLED = "%s slain: %d/%d"
-local faction_pattern = '^' .. QUEST_FACTION_NEEDED:gsub('(%%%d?$?.)', '(.-)') .. '$' --QUEST_FACTION_NEEDED = "%s: %s / %s"
-
 -- "Deformat" the pattern to find their argument order
 local MatchObject, MatchMonster, MatchFaction
 do
