@@ -21,48 +21,25 @@ local monsters_pattern = '^' .. QUEST_MONSTERS_KILLED:gsub('(%%%d?$?.)', '(.-)')
 local faction_pattern = '^' .. QUEST_FACTION_NEEDED:gsub('(%%%d?$?.)', '(.-)') .. '$' --QUEST_FACTION_NEEDED = "%s: %s / %s"
 
 -- "Deformat" the pattern to find their argument order
-local ObjectPermute, MonsterPermute, FactionPermute
+local MatchObject, MatchMonster, MatchFaction
 do
-	local one, two, three = QUEST_OBJECTS_FOUND:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
-	if one and two and three then
-		ObjectPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
+	local function GetPermute3(pattern)
+		local one, two, three = pattern:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
+		if one and two and three then
+			return ("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three)
+		end
+		return "return function(...) return ... end"
 	end
 
-	one, two, three = QUEST_MONSTERS_KILLED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
-	if one and two and three then
-		MonsterPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
+	local function GetMatcher(pattern)
+		local permuteFn = loadstring(GetPermute3(pattern))()
+		local match_pattern = '^' .. pattern:gsub('(%%%d?$?.)', '(.-)') .. '$'
+		return function(text) return permuteFn(text:match(match_pattern)) end
 	end
 
-	one, two, three = QUEST_FACTION_NEEDED:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
-	if one and two and three then
-		FactionPermute = loadstring(("return function(r%d, r%d, r%d) return r1, r2, r3 end"):format(one, two, three))()
-	end
-end
-
--- match the object string
--- returns name, num, needed
-local function MatchObject(description)
-	if ObjectPermute then
-		return ObjectPermute(description:match(objects_pattern))
-	else
-		return description:match(objects_pattern)
-	end
-end
-
-local function MatchMonster(description)
-	if MonsterPermute then
-		return MonsterPermute(description:match(monsters_pattern))
-	else
-		return description:match(monsters_pattern)
-	end
-end
-
-local function MatchFaction(description)
-	if FactionPermute then
-		return FactionPermute(description:match(faction_pattern))
-	else
-		return description:match(faction_pattern)
-	end
+	MatchObject = GetMatcher(QUEST_OBJECTS_FOUND)
+	MatchMonster = GetMatcher(QUEST_MONSTERS_KILLED)
+	MatchFaction = GetMatcher(QUEST_FACTION_NEEDED)
 end
 
 -- utility functions
