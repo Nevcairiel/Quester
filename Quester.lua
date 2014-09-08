@@ -295,14 +295,14 @@ function Quester:QuestLogQuests_Update()
 		if button and button:IsShown() then
 			local text = GetTaggedTitle(button.questLogIndex, false)
 
-			local partyMembersOnQuest = 0;
+			local partyMembersOnQuest = 0
 			for j=1, GetNumSubgroupMembers() do
 				if IsUnitOnQuestByQuestID(button.questID, "party"..j) then
 					partyMembersOnQuest = partyMembersOnQuest + 1
 				end
 			end
 
-			if ( partyMembersOnQuest > 0 ) then
+			if partyMembersOnQuest > 0 then
 				text = "["..partyMembersOnQuest.."] "..text
 			end
 
@@ -314,7 +314,7 @@ function Quester:QuestLogQuests_Update()
 
 			-- re-anchor check mark
 			if button.Check:IsShown() then
-				button.Check:SetPoint("LEFT", button.Text, button.Text:GetWrappedWidth() + 2, 0);
+				button.Check:SetPoint("LEFT", button.Text, button.Text:GetWrappedWidth() + 2, 0)
 			end
 
 			-- compute new button height, in case text wrapping changed
