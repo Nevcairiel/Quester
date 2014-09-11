@@ -53,9 +53,9 @@ local function GetTaggedTitle(i, color)
 	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
 	if not isHeader and title then
 		if color then
-			title = string.format("|cff%s[%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, title)
+			title = format("|cff%s[%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, title)
 		else
-			title = string.format("[%s] %s", level, title)
+			title = format("[%s] %s", level, title)
 		end
 	end
 	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory
