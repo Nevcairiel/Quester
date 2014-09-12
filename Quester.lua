@@ -178,6 +178,7 @@ end
 
 function Quester:OnEnable()
 	self:RegisterEvent("QUEST_LOG_UPDATE")
+	self:RegisterEvent("GOSSIP_SHOW")
 
 	--self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
@@ -190,6 +191,7 @@ function Quester:OnEnable()
 
 	self:EnvironmentProxy()
 	self:QUEST_LOG_UPDATE()
+	self:GOSSIP_SHOW()
 end
 
 function Quester:UIErrorsFrame_OnEvent(frame, event, message)
@@ -359,6 +361,29 @@ function Quester:QUEST_LOG_UPDATE()
 
 	-- restore previous questlog selection
 	SelectQuestLogEntry(startingQuestLogSelection)
+end
+
+function ProcessGossip(index, skip, ...)
+	local numQuests = select("#", ...)
+	for i = 2, numQuests, skip do
+		local button = _G["GossipTitleButton"..index]
+		local text, col = button:GetText(), nil
+		if text:match('^|c(.*)%[') then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
+		button:SetText(format('|cff%s[%d] %s|r', rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i,...) or 0, text))
+		index = index + 1
+	end
+	return index + 1
+end
+
+function Quester:GOSSIP_SHOW()
+	if not GossipFrame:IsVisible() then return end
+	local buttonindex = 1
+	if GetGossipAvailableQuests() then
+		buttonindex = ProcessGossip(buttonindex, 6, GetGossipAvailableQuests())
+	end
+	if GetGossipActiveQuests() then
+		buttonindex = ProcessGossip(buttonindex, 5, GetGossipActiveQuests())
+	end
 end
 
 local lines = {}
