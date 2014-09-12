@@ -18,7 +18,7 @@ local defaults = {
 }
 
 -- "Deformat" the pattern to find their argument order
-local MatchObject, MatchMonster, MatchFaction
+local MatchObject, MatchMonster, MatchFaction, MatchErrObject, MatchErrFound, MatchErrKill, MatchErrCompleted
 do
 	local function GetPermute3(pattern)
 		local one, two, three = pattern:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
@@ -30,16 +30,38 @@ do
 
 	local function GetMatcher(pattern)
 		local permuteFn = loadstring(GetPermute3(pattern))()
-		local match_pattern = '^' .. pattern:gsub('(%%%d?$?.)', '(.-)') .. '$'
+		local match_pattern = '^' .. pattern:gsub('%(','%%('):gsub('%)', '%%)'):gsub('(%%%d?$?[^()])', '(.-)') .. '$'
 		return function(text) return permuteFn(text:match(match_pattern)) end
 	end
 
 	MatchObject = GetMatcher(QUEST_OBJECTS_FOUND)
 	MatchMonster = GetMatcher(QUEST_MONSTERS_KILLED)
 	MatchFaction = GetMatcher(QUEST_FACTION_NEEDED)
+
+	MatchErrObject = GetMatcher(ERR_QUEST_ADD_ITEM_SII)
+	MatchErrFound = GetMatcher(ERR_QUEST_ADD_FOUND_SII)
+	MatchErrKill = GetMatcher(ERR_QUEST_ADD_KILL_SII)
+	MatchErrCompleted = GetMatcher(ERR_QUEST_OBJECTIVE_COMPLETE_S)
 end
 
 -- utility functions
+local function ColorGradient(perc, ...)
+	if perc >= 1 then
+		local r, g, b = select(select('#', ...) - 2, ...)
+		return r, g, b
+	elseif perc <= 0 then
+		local r, g, b = ...
+		return r, g, b
+	end
+
+	local num = select('#', ...) / 3
+
+	local segment, relperc = math.modf(perc*(num-1))
+	local r1, g1, b1, r2, g2, b2 = select((segment*3)+1, ...)
+
+	return r1 + (r2-r1)*relperc, g1 + (g2-g1)*relperc, b1 + (b2-b1)*relperc
+end
+
 local function rgb2hex(r, g, b)
 	if type(r) == "table" then
 		g = r.g
@@ -160,10 +182,46 @@ function Quester:OnEnable()
 	--self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
 	self:SecureHook(QUEST_TRACKER_MODULE, "SetBlockHeader", "QuestTrackerSetHeader")
+	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
+	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook("QuestLogQuests_Update")
+
+	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
 	self:EnvironmentProxy()
 	self:QUEST_LOG_UPDATE()
+end
+
+function Quester:UIErrorsFrame_OnEvent(frame, event, message)
+	if event == "UI_INFO_MESSAGE" then
+		local name, numItems, numNeeded = MatchErrObject(message)
+		if not name then
+			name, numItems, numNeeded = MatchErrKill(message)
+		end
+		if not name then
+			name, numItems, numNeeded = MatchErrFound(message)
+		end
+		if not name then
+			name = MatchErrCompleted(message)
+			if name then
+				numItems = 1
+				numNeeded = 1
+			end
+		end
+		if not name then
+			if message == ERR_QUEST_UNKNOWN_COMPLETE then
+				name = message
+				numItems = 1
+				numNeeded = 1
+			end
+		end
+		if name then
+			local perc = tonumber(numItems) / tonumber(numNeeded)
+			self:Pour(message, ColorGradient(perc, 1,0,0, 1,1,0, 0,1,0))
+			return
+		end
+	end
+	return self.hooks[frame].OnEvent(frame, event, message)
 end
 
 local function getTable()
@@ -368,6 +426,13 @@ function Quester:QuestLogQuests_Update()
 			totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
 			button:SetHeight(totalHeight)
 		end
+	end
+end
+
+function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
+	if progress[text] then
+		local line = obj:GetLine(block, objectiveKey, lineType)
+		line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), text))
 	end
 end
 
