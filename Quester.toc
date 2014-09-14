@@ -3,6 +3,7 @@
 ## Title: Quester
 ## Notes: Improved Questing Experience
 ## Author: Nevcairiel
+## Version: @project-version@
 ## X-Credits: SmoothQuest by Ammo
 
 ## OptionalDeps: Ace3, LibSink-2.0
