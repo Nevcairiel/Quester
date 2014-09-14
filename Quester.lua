@@ -192,6 +192,9 @@ function Quester:OnEnable()
 	self:EnvironmentProxy()
 	self:QUEST_LOG_UPDATE()
 	self:GOSSIP_SHOW()
+
+	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE, true)
+	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE, false)
 end
 
 function Quester:UIErrorsFrame_OnEvent(frame, event, message)
@@ -450,6 +453,20 @@ function Quester:QuestLogQuests_Update()
 			local totalHeight = button:GetHeight()
 			totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
 			button:SetHeight(totalHeight)
+		end
+	end
+end
+
+function Quester:UpdateObjectiveTracker(tracker, hasHeader)
+	for id, block in pairs(tracker.usedBlocks) do
+		if block.used then
+			if hasHeader then
+				self:QuestTrackerSetHeader(tracker, block, block.HeaderText:GetText(), block.questLogIndex)
+			end
+
+			for key, line in pairs(block.lines) do
+				self:ObjectiveTracker_AddObjective(tracker, block, key, line.Text:GetText(), line.type)
+			end
 		end
 	end
 end
