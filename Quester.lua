@@ -1,4 +1,5 @@
 local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
+local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
 local db
 local defaults = {
@@ -108,48 +109,48 @@ local function getOptionsTable()
 		args = {
 			behaviorheader = {
 				type = "header",
-				name = "Behavior Configuration",
+				name = L["Behavior Configuration"],
 				order = 1,
 			},
 			removeComplete = {
-				name = "Un-track complete quests",
-				desc = "Toggle if completing a quest should automatically remove it from the tracker.",
+				name = L["Un-track complete quests"],
+				desc = L["Toggle if completing a quest should automatically remove it from the tracker."],
 				type = "toggle",
 				arg = "removeComplete",
 				order = 2,
 			},
 			soundheader = {
 				type = "header",
-				name = "Sound Configuration",
+				name = L["Sound Configuration"],
 				order = 10,
 			},
 			sounddesc = {
 				type = "description",
-				name = "Configure the sounds you want to hear with the toggles below.",
+				name = L["Configure the sounds you want to hear with the toggles below."],
 				order = 11,
 			},
 			morework = {
-				name = "More Work?!",
-				desc = "Toggle playing the 'More Work?!' sound after completing an objective.",
+				name = L["More Work?!"],
+				desc = L["Toggle playing the 'More Work?!' sound after completing an objective."],
 				type = "toggle",
 				arg = "morework",
 				order = 12,
 			},
 			jobsdone = {
-				name = "Job's Done!",
-				desc = "Toggle playing the 'Job's Done!' sound after completing a quest.",
+				name = L["Job's Done!"],
+				desc = L["Toggle playing the 'Job's Done!' sound after completing a quest."],
 				type = "toggle",
 				arg = "jobsdone",
 				order = 13,
 			},
 			header = {
 				type = "header",
-				name = "Progress Output",
+				name = L["Progress Output"],
 				order = 20,
 			},
 			desc = {
 				type = "description",
-				name = "You can select where you want progress messages displayed using the options below.",
+				name = L["You can select where you want progress messages displayed using the options below."],
 				order = 21,
 			},
 			sink = Quester:GetSinkAce3OptionsDataTable(),
