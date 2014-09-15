@@ -113,7 +113,7 @@ local function getOptionsTable()
 			},
 			removeComplete = {
 				name = "Un-track complete quests",
-				desc = "Toogle if completing a quest should automatically remove it from the tracker.",
+				desc = "Toggle if completing a quest should automatically remove it from the tracker.",
 				type = "toggle",
 				arg = "removeComplete",
 				order = 2,
