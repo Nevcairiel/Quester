@@ -205,6 +205,10 @@ function Quester:OnEnable()
 
 	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE, true)
 	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE, false)
+
+	if QuestFrameRewardPanel:IsVisible() then
+		self:QUEST_COMPLETE()
+	end
 end
 
 function Quester:UIErrorsFrame_OnEvent(frame, event, message)
