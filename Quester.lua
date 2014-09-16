@@ -6,6 +6,7 @@ local defaults = {
 	profile = {
 		-- options
 		removeComplete = true,
+		highlightReward = true,
 
 		-- sounds
 		morework = true,
@@ -119,6 +120,13 @@ local function getOptionsTable()
 				arg = "removeComplete",
 				order = 2,
 			},
+			highlightReward = {
+				name = L["Highlight most valuable reward"],
+				desc = L["Highlight the reward with the highest vendor value when completing a quest."],
+				type = "toggle",
+				arg = "highlightReward",
+				order = 3,
+			},
 			soundheader = {
 				type = "header",
 				name = L["Sound Configuration"],
@@ -180,6 +188,7 @@ end
 function Quester:OnEnable()
 	self:RegisterEvent("QUEST_LOG_UPDATE")
 	self:RegisterEvent("GOSSIP_SHOW")
+	self:RegisterEvent("QUEST_COMPLETE")
 
 	--self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
@@ -489,4 +498,38 @@ function Quester:EnvironmentProxy()
 	-- quest log/map
 	setfenv(WorldMapQuestPOI_SetTooltip, env)
 	setfenv(WorldMapQuestPOI_AppendTooltip, env)
+end
+
+function Quester:SetRewardHighlight(reward)
+	if not self.rewardHighlightFrame then
+		self.rewardHighlightFrame = CreateFrame("Frame", "QuesterRewardHighlight", QuestInfoRewardsFrame, "AutoCastShineTemplate")
+		self.rewardHighlightFrame:SetScript("OnHide", function(self) AutoCastShine_AutoCastStop(self) end)
+	end
+	self.rewardHighlightFrame:ClearAllPoints()
+	self.rewardHighlightFrame:SetAllPoints(reward)
+	self.rewardHighlightFrame:Show()
+	AutoCastShine_AutoCastStart(self.rewardHighlightFrame)
+end
+
+function Quester:QUEST_COMPLETE()
+	if self.rewardHighlightFrame then
+		self.rewardHighlightFrame:Hide()
+	end
+
+	if not db.highlightReward then return end
+
+	local bestprice, bestitem = 0, 0
+	for i = 1, GetNumQuestChoices() do
+		local link, name, _, qty = GetQuestItemLink("choice", i), GetQuestItemInfo("choice", i)
+		local price = link and select(11, GetItemInfo(link))
+		if not price then return end
+		price = price * (qty or 1)
+		if price > bestprice then
+			bestprice = price
+			bestitem = i
+		end
+	end
+	if bestitem > 0 then
+		self:SetRewardHighlight(_G[("QuestInfoRewardsFrameQuestInfoItem%dIconTexture"):format(bestitem)])
+	end
 end
