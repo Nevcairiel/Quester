@@ -343,7 +343,7 @@ function Quester:QUEST_LOG_UPDATE()
 					elseif objType == "reputation" then
 						itemDesc, numItems, numNeeded = MatchFaction(objDesc)
 						numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
-					elseif objType == "event" or objType == "log" then
+					elseif objType == "event" or objType == "log" or objType == "spell" then
 						itemDesc, numNeeded, numItems = objDesc, 1, (objComplete and 1 or 0)
 					else
 						print("Unknown quest objective type: " .. objType .. ", on quest: " .. title .. ", objective: " .. objDesc)
