@@ -307,7 +307,7 @@ function Quester:QUEST_LOG_UPDATE()
 					-- completed the quest
 					self:Pour(ERR_QUEST_COMPLETE_S:format(title), 0, 1, 0)
 					if db.jobsdone then
-						PlaySoundFile("Interface\\AddOns\\Quester\\sounds\\jobsdone.mp3")
+						PlaySoundFile("Interface\\AddOns\\Quester\\sounds\\jobsdone.ogg")
 					end
 					if db.removeComplete and IsQuestWatched(index) then
 						RemoveQuestWatch(index)
