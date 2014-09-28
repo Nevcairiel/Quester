@@ -188,6 +188,7 @@ end
 function Quester:OnEnable()
 	self:RegisterEvent("QUEST_LOG_UPDATE")
 	self:RegisterEvent("GOSSIP_SHOW")
+	self:RegisterEvent("QUEST_GREETING")
 	self:RegisterEvent("QUEST_COMPLETE")
 
 	self:HookScript(GameTooltip, "OnTooltipSetItem")
@@ -400,6 +401,22 @@ function Quester:GOSSIP_SHOW()
 	end
 	if GetGossipActiveQuests() then
 		buttonindex = ProcessGossip(buttonindex, 5, GetGossipActiveQuests())
+	end
+end
+
+function Quester:QUEST_GREETING()
+	if not QuestFrameGreetingPanel:IsVisible() then return end
+
+	local active, available = GetNumActiveQuests(), GetNumAvailableQuests()
+	local title, level, button
+	local o, GetTitle, GetLevel = 0,  GetActiveTitle, GetActiveLevel
+	for i=1, active + available do
+		if i == active + 1 then
+			o,GetTitle,GetLevel = active, GetAvailableTitle, GetAvailableLevel
+		end
+		title, level = GetTitle(i-o), GetLevel(i-o)
+		button = _G["QuestTitleButton"..i]
+		button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
 	end
 end
 
