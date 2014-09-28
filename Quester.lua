@@ -396,8 +396,10 @@ function Quester:QUEST_LOG_UPDATE()
 						numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
 					elseif objType == "event" or objType == "log" or objType == "spell" then
 						itemDesc, numNeeded, numItems = objDesc, 1, (objComplete and 1 or 0)
+					--@debug@
 					else
 						print("Unknown quest objective type: " .. objType .. ", on quest: " .. title .. ", objective: " .. objDesc)
+					--@end-debug@
 					end
 					numNeeded, numItems = tonumber(numNeeded), tonumber(numItems)
 					if numNeeded and numNeeded > 0 then
