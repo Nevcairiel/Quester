@@ -1,7 +1,7 @@
 local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
-local db
+local db, taintWarned
 local defaults = {
 	profile = {
 		-- options
@@ -518,8 +518,9 @@ function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
 	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
 	-- taint check
 	local isSecure, addon = issecurevariable(block, "questLogIndex")
-	if not isSecure then
-		print("Quest Tracker tainted by " .. tostring(addon))
+	if not isSecure and not taintWarned then
+		self:Print("Quest Tracker tainted by " .. tostring(addon))
+		taintWarned = true
 	end
 end
 
