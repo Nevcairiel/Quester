@@ -9,6 +9,7 @@ local defaults = {
 		highlightReward = true,
 
 		-- sounds
+		soundSet = 1,
 		morework = true,
 		jobsdone = true,
 
@@ -157,19 +158,32 @@ local function getOptionsTable()
 				name = L["Configure the sounds you want to hear with the toggles below."],
 				order = 11,
 			},
+			soundSet = {
+				type = "select",
+				name = L["Sound Set"],
+				desc = L["Select the set of sounds to use."],
+				arg = "soundSet",
+				values = { L["Peasant"], L["Peon"] },
+				order = 12,
+			},
+			sound_nl = {
+				type = "description",
+				name = "",
+				order = 13,
+			},
 			morework = {
 				name = L["More Work?!"],
 				desc = L["Toggle playing the 'More Work?!' sound after completing an objective."],
 				type = "toggle",
 				arg = "morework",
-				order = 12,
+				order = 15,
 			},
 			jobsdone = {
 				name = L["Job's Done!"],
 				desc = L["Toggle playing the 'Job's Done!' sound after completing a quest."],
 				type = "toggle",
 				arg = "jobsdone",
-				order = 13,
+				order = 16,
 			},
 			header = {
 				type = "header",
@@ -190,6 +204,25 @@ local function getOptionsTable()
 	options.args.sink.inline = true
 	options.args.sink.name = ""
 	return options
+end
+
+local QUESTER_SOUND_MORE_WORK = 1
+local QUESTER_SOUND_JOBS_DONE = 2
+
+local sounds = {
+	[1] = {
+		"Sound\\Creature\\Peasant\\PeasantWhat3.ogg",
+		"Interface\\AddOns\\Quester\\sounds\\jobsdone.ogg"
+	},
+	[2] = {
+		"Sound\\Creature\\Peon\\PeonYes3.ogg",
+		"Sound\\Creature\\Peon\\PeonBuildingComplete1.ogg"
+	}
+}
+local function PlayQuestSound(index)
+	local soundSet = db.soundSet
+	if soundSet ~= 1 and soundSet ~= 2 then soundSet = 1 end
+	PlaySoundFile(sounds[soundSet][index])
 end
 
 local first = true
@@ -325,7 +358,7 @@ function Quester:QUEST_LOG_UPDATE()
 					-- completed the quest
 					self:Pour(ERR_QUEST_COMPLETE_S:format(title), 0, 1, 0)
 					if db.jobsdone then
-						PlaySoundFile("Interface\\AddOns\\Quester\\sounds\\jobsdone.ogg")
+						PlayQuestSound(QUESTER_SOUND_JOBS_DONE)
 					end
 					if db.removeComplete and IsQuestWatched(index) then
 						RemoveQuestWatch(index)
@@ -384,7 +417,7 @@ function Quester:QUEST_LOG_UPDATE()
 						end
 						if not first and not complete[title] and objComplete and not oldcomplete[c] and (not isTask or oldquests[title]) then
 							if db.morework then
-								PlaySoundFile("Sound\\Creature\\Peasant\\PeasantWhat3.wav")
+								PlayQuestSound(QUESTER_SOUND_MORE_WORK)
 							end
 						end
 					end
