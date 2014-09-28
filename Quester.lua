@@ -190,7 +190,7 @@ function Quester:OnEnable()
 	self:RegisterEvent("GOSSIP_SHOW")
 	self:RegisterEvent("QUEST_COMPLETE")
 
-	--self:HookScript(GameTooltip, "OnTooltipSetItem")
+	self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
 	self:SecureHook(QUEST_TRACKER_MODULE, "SetBlockHeader", "QuestTrackerSetHeader")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
@@ -421,6 +421,19 @@ function Quester:OnTooltipSetUnit(tooltip, ...)
 				lines[i]:SetText(GetTaggedTitle(quests[text], true))
 				tooltip:Show()
 			end
+		end
+	end
+end
+
+function Quester:OnTooltipSetItem(tooltip, ...)
+	local name = tooltip:GetItem()
+	if items[name] then
+		local it = items[name]
+		if progress[it] then
+			tooltip:AddLine(GetTaggedTitle(progress[it].qid, true))
+			local text = GetQuestLogLeaderBoard(progress[it].lid, progress[it].qid)
+			tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+			tooltip:Show()
 		end
 	end
 end
