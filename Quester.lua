@@ -202,10 +202,6 @@ function Quester:OnEnable()
 
 	self:EnvironmentProxy()
 	self:QUEST_LOG_UPDATE()
-	self:GOSSIP_SHOW()
-
-	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE, true)
-	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE, false)
 
 	if QuestFrameRewardPanel:IsVisible() then
 		self:QUEST_COMPLETE()
@@ -379,6 +375,12 @@ function Quester:QUEST_LOG_UPDATE()
 
 	-- restore previous questlog selection
 	SelectQuestLogEntry(startingQuestLogSelection)
+
+	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE, true)
+	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE, false)
+
+	self:QUEST_GREETING()
+	self:GOSSIP_SHOW()
 end
 
 function ProcessGossip(index, skip, ...)
