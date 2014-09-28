@@ -73,6 +73,18 @@ local function rgb2hex(r, g, b)
 	return format("%02x%02x%02x", r*255, g*255, b*255)
 end
 
+local tags = {
+	[DAILY] = "\226\128\162",
+}
+
+local function GetQuestTag(groupSize, frequency)
+	local tag = ""
+	if frequency == LE_QUEST_FREQUENCY_DAILY or frequency == LE_QUEST_FREQUENCY_WEEKLY then
+		tag = tags[DAILY]
+	end
+	return tag
+end
+
 local function GetTaggedTitle(i, color)
 	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
 	if not isHeader and title then
@@ -83,6 +95,13 @@ local function GetTaggedTitle(i, color)
 		end
 	end
 	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory
+end
+
+local function GetChatTaggedTitle(i)
+	if not i then return nil end
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
+	if isHeader or not title then return end
+	return format("(%s%s) %s", level, GetQuestTag(groupSize, frequency), title)
 end
 
 -- faction data for reputation quests
@@ -201,6 +220,7 @@ function Quester:OnEnable()
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
 	self:EnvironmentProxy()
+	self:SetupChatFilter()
 	self:QUEST_LOG_UPDATE()
 
 	if QuestFrameRewardPanel:IsVisible() then
@@ -534,6 +554,21 @@ function Quester:EnvironmentProxy()
 	-- quest log/map
 	setfenv(WorldMapQuestPOI_SetTooltip, env)
 	setfenv(WorldMapQuestPOI_AppendTooltip, env)
+end
+
+function Quester:SetupChatFilter()
+	local function process(full, level, partial)
+		return full:gsub(partial, GetChatTaggedTitle(quests[partial]) or "("..level..") "..partial)
+	end
+	local function filter(self, event, msg, ...)
+		if msg then
+			msg = msg:gsub("(|c%x+|Hquest:%d+:(%d+)|h%[([^|]*)%]|h|r)", process)
+			return false, msg, ...
+		end
+	end
+	for _,event in pairs{"SAY", "YELL", "GUILD", "GUILD_OFFICER", "WHISPER", "WHISPER_INFORM", "PARTY", "PARTY_LEADER", "RAID", "RAID_LEADER", "INSTANCE_CHAT", "INSTANCE_CHAT_LEADER", "BATTLEGROUND", "BATTLEGROUND_LEADER"} do
+		ChatFrame_AddMessageEventFilter("CHAT_MSG_"..event, filter)
+	end
 end
 
 function Quester:SetRewardHighlight(reward)
