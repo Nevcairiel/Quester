@@ -85,13 +85,14 @@ local function GetQuestTag(groupSize, frequency)
 	return tag
 end
 
-local function GetTaggedTitle(i, color)
+local function GetTaggedTitle(i, color, tag)
 	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
 	if not isHeader and title then
+		local tagString = tag and GetQuestTag(groupSize, frequency) or ""
 		if color then
-			title = format("|cff%s[%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, title)
+			title = format("|cff%s[%s%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, tagString, title)
 		else
-			title = format("[%s] %s", level, title)
+			title = format("[%s%s] %s", level, tagString, title)
 		end
 	end
 	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory
@@ -457,7 +458,7 @@ function Quester:OnTooltipSetUnit(tooltip, ...)
 		if lines[i] then
 			local text = lines[i]:GetText()
 			if quests[text] then
-				lines[i]:SetText(GetTaggedTitle(quests[text], true))
+				lines[i]:SetText(GetTaggedTitle(quests[text], true, true))
 				tooltip:Show()
 			end
 		end
@@ -469,7 +470,7 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 	if items[name] then
 		local it = items[name]
 		if progress[it] then
-			tooltip:AddLine(GetTaggedTitle(progress[it].qid, true))
+			tooltip:AddLine(GetTaggedTitle(progress[it].qid, true, true))
 			local text = GetQuestLogLeaderBoard(progress[it].lid, progress[it].qid)
 			tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
 			tooltip:Show()
@@ -478,7 +479,7 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 end
 
 function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
-	text = GetTaggedTitle(questLogIndex, true)
+	text = GetTaggedTitle(questLogIndex, true, false)
 	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
 	-- taint check
 	local isSecure, addon = issecurevariable(block, "questLogIndex")
@@ -491,7 +492,7 @@ function Quester:QuestLogQuests_Update()
 	for i = 1, #QuestMapFrame.QuestsFrame.Contents.Titles do
 		local button = QuestMapFrame.QuestsFrame.Contents.Titles[i]
 		if button and button:IsShown() then
-			local text = GetTaggedTitle(button.questLogIndex, false)
+			local text = GetTaggedTitle(button.questLogIndex, false, false)
 
 			local partyMembersOnQuest = 0
 			for j=1, GetNumSubgroupMembers() do
@@ -547,7 +548,7 @@ end
 function Quester:EnvironmentProxy()
 	local env = setmetatable({
 		GetQuestLogTitle = function(index)
-			return GetTaggedTitle(index, false)
+			return GetTaggedTitle(index, false, true)
 		end,
 	}, {__index = _G})
 
