@@ -147,6 +147,7 @@ local function getOptionsTable()
 				type = "toggle",
 				arg = "highlightReward",
 				order = 3,
+				width = "double",
 			},
 			soundheader = {
 				type = "header",
