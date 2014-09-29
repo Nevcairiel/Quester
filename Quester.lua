@@ -440,7 +440,7 @@ function Quester:QUEST_LOG_UPDATE()
 	self:GOSSIP_SHOW()
 end
 
-function ProcessGossip(index, skip, ...)
+local function ProcessGossip(index, skip, ...)
 	local numQuests = select("#", ...)
 	for i = 2, numQuests, skip do
 		local button = _G["GossipTitleButton"..index]
