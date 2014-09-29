@@ -33,7 +33,7 @@ do
 
 	local function GetMatcher(pattern)
 		local permuteFn = loadstring(GetPermute3(pattern))()
-		local match_pattern = '^' .. pattern:gsub('%(','%%('):gsub('%)', '%%)'):gsub('(%%%d?$?[^()])', '(.-)') .. '$'
+		local match_pattern = "^" .. pattern:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?[^()])", "(.-)") .. "$"
 		return function(text) return permuteFn(text:match(match_pattern)) end
 	end
 
@@ -50,14 +50,14 @@ end
 -- utility functions
 local function ColorGradient(perc, ...)
 	if perc >= 1 then
-		local r, g, b = select(select('#', ...) - 2, ...)
+		local r, g, b = select(select("#", ...) - 2, ...)
 		return r, g, b
 	elseif perc <= 0 then
 		local r, g, b = ...
 		return r, g, b
 	end
 
-	local num = select('#', ...) / 3
+	local num = select("#", ...) / 3
 
 	local segment, relperc = math.modf(perc*(num-1))
 	local r1, g1, b1, r2, g2, b2 = select((segment*3)+1, ...)
@@ -347,7 +347,7 @@ function Quester:QUEST_LOG_UPDATE()
 		if not isHeader then
 			local questDescription, questObjectives = GetQuestLogQuestText(index)
 			-- Some other quest addons hook GetQuestLogTitle to add levels to the names.  This is annoying, so strip out the common format for it.
-			if title:match('^%[') then title = title:match("^%[[^%]]+%]%s?(.*)") end
+			if title:match("^%[") then title = title:match("^%[[^%]]+%]%s?(.*)") end
 
 			-- store the quest in our lookup table
 			quests[title] = index
@@ -447,8 +447,8 @@ local function ProcessGossip(index, skip, ...)
 	for i = 2, numQuests, skip do
 		local button = _G["GossipTitleButton"..index]
 		local text, col = button:GetText(), nil
-		if text:match('^|c(.*)%[') then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
-		button:SetText(format('|cff%s[%d] %s|r', rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i,...) or 0, text))
+		if text:match("^|c(.*)%[") then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
+		button:SetText(format("|cff%s[%d] %s|r", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i,...) or 0, text))
 		index = index + 1
 	end
 	return index + 1
