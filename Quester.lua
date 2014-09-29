@@ -433,9 +433,11 @@ function Quester:QUEST_LOG_UPDATE()
 	-- restore previous questlog selection
 	SelectQuestLogEntry(startingQuestLogSelection)
 
+	-- update the objective tracker
 	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE, true)
 	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE, false)
 
+	-- update any open dialogs
 	self:QUEST_GREETING()
 	self:GOSSIP_SHOW()
 end
