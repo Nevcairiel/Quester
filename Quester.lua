@@ -449,6 +449,7 @@ local function ProcessGossip(index, skip, ...)
 		local text, col = button:GetText(), nil
 		if text:match("^|c(.*)%[") then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
 		button:SetText(format("|cff%s[%d] %s|r", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i,...) or 0, text))
+		GossipResize(button)
 		index = index + 1
 	end
 	return index + 1
@@ -478,6 +479,7 @@ function Quester:QUEST_GREETING()
 		title, level = GetTitle(i-o), GetLevel(i-o)
 		button = _G["QuestTitleButton"..i]
 		button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
+		button:SetHeight(button:GetTextHeight() + 2)
 	end
 end
 
