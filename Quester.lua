@@ -532,17 +532,6 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 	end
 end
 
-function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
-	text = GetTaggedTitle(questLogIndex, true, false)
-	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
-	-- taint check
-	local isSecure, addon = issecurevariable(block, "questLogIndex")
-	if not isSecure and not taintWarned then
-		self:Print("Quest Tracker tainted by " .. tostring(addon))
-		taintWarned = true
-	end
-end
-
 function Quester:QuestLogQuests_Update()
 	for i = 1, #QuestMapFrame.QuestsFrame.Contents.Titles do
 		local button = QuestMapFrame.QuestsFrame.Contents.Titles[i]
@@ -590,6 +579,17 @@ function Quester:UpdateObjectiveTracker(tracker, hasHeader)
 				self:ObjectiveTracker_AddObjective(tracker, block, key, line.Text:GetText(), line.type)
 			end
 		end
+	end
+end
+
+function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
+	text = GetTaggedTitle(questLogIndex, true, false)
+	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
+	-- taint check
+	local isSecure, addon = issecurevariable(block, "questLogIndex")
+	if not isSecure and not taintWarned then
+		self:Print("Quest Tracker tainted by " .. tostring(addon))
+		taintWarned = true
 	end
 end
 
