@@ -5,6 +5,7 @@ local db, taintWarned
 local defaults = {
 	profile = {
 		-- options
+		questLevels = true,
 		removeComplete = true,
 		highlightReward = true,
 
@@ -91,8 +92,12 @@ local function GetTaggedTitle(i, color, tag)
 	if not isHeader and title then
 		local tagString = tag and GetQuestTag(groupSize, frequency) or ""
 		if color then
-			title = format("|cff%s[%s%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, tagString, title)
-		else
+			if db.questLevels then
+				title = format("|cff%s[%s%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, tagString, title)
+			else
+				title = format("|cff%s%s|r", rgb2hex(GetQuestDifficultyColor(level)), title)
+			end
+		elseif db.questLevels then
 			title = format("[%s%s] %s", level, tagString, title)
 		end
 	end
@@ -134,20 +139,29 @@ local function getOptionsTable()
 				name = L["Behavior Configuration"],
 				order = 1,
 			},
+			questLevel = {
+				name = L["Show Quest Level"],
+				desc = L["Toggle if quest levels are shown in various parts of the UI.\nNote: Changing this option may require your UI to be reloaded to take full effect."],
+				type = "toggle",
+				arg = "questLevels",
+				order = 2,
+				width = "full",
+			},
 			removeComplete = {
 				name = L["Un-track complete quests"],
 				desc = L["Toggle if completing a quest should automatically remove it from the tracker."],
 				type = "toggle",
 				arg = "removeComplete",
-				order = 2,
+				order = 3,
+				width = "full",
 			},
 			highlightReward = {
 				name = L["Highlight most valuable reward"],
 				desc = L["Highlight the reward with the highest vendor value when completing a quest."],
 				type = "toggle",
 				arg = "highlightReward",
-				order = 3,
-				width = "double",
+				order = 4,
+				width = "full",
 			},
 			soundheader = {
 				type = "header",
@@ -456,7 +470,7 @@ local function ProcessGossip(index, skip, ...)
 end
 
 function Quester:GOSSIP_SHOW()
-	if not GossipFrame:IsVisible() then return end
+	if not GossipFrame:IsVisible() or not db.questLevels then return end
 	local buttonindex = 1
 	if GetGossipAvailableQuests() then
 		buttonindex = ProcessGossip(buttonindex, 6, GetGossipAvailableQuests())
@@ -467,7 +481,7 @@ function Quester:GOSSIP_SHOW()
 end
 
 function Quester:QUEST_GREETING()
-	if not QuestFrameGreetingPanel:IsVisible() then return end
+	if not QuestFrameGreetingPanel:IsVisible() or not db.questLevels then return end
 
 	local active, available = GetNumActiveQuests(), GetNumAvailableQuests()
 	local title, level, button
@@ -604,7 +618,9 @@ function Quester:SetupChatFilter()
 	end
 	local function filter(self, event, msg, ...)
 		if msg then
-			msg = msg:gsub("(|c%x+|Hquest:%d+:(%d+)|h%[([^|]*)%]|h|r)", process)
+			if db.questLevels then
+				msg = msg:gsub("(|c%x+|Hquest:%d+:(%d+)|h%[([^|]*)%]|h|r)", process)
+			end
 			return false, msg, ...
 		end
 	end
