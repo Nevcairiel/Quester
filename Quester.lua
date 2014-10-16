@@ -261,7 +261,7 @@ function Quester:OnEnable()
 
 	self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
-	self:SecureHook(QUEST_TRACKER_MODULE, "SetBlockHeader", "QuestTrackerSetHeader")
+	self:SecureHook(QUEST_TRACKER_MODULE, "GetBlock", "QuestTrackerGetBlock")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook("QuestLogQuests_Update")
@@ -448,8 +448,8 @@ function Quester:QUEST_LOG_UPDATE()
 	SelectQuestLogEntry(startingQuestLogSelection)
 
 	-- update the objective tracker
-	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE, true)
-	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE, false)
+	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE)
+	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE)
 
 	-- update any open dialogs
 	self:QUEST_GREETING()
@@ -568,13 +568,9 @@ function Quester:QuestLogQuests_Update()
 	end
 end
 
-function Quester:UpdateObjectiveTracker(tracker, hasHeader)
+function Quester:UpdateObjectiveTracker(tracker)
 	for id, block in pairs(tracker.usedBlocks) do
 		if block.used then
-			if hasHeader then
-				self:QuestTrackerSetHeader(tracker, block, block.HeaderText:GetText(), block.questLogIndex)
-			end
-
 			for key, line in pairs(block.lines) do
 				self:ObjectiveTracker_AddObjective(tracker, block, key, line.Text:GetText(), line.type)
 			end
@@ -582,14 +578,27 @@ function Quester:UpdateObjectiveTracker(tracker, hasHeader)
 	end
 end
 
-function Quester:QuestTrackerSetHeader(_, block, text, questLogIndex)
-	text = GetTaggedTitle(questLogIndex, true, false)
-	local height = QUEST_TRACKER_MODULE:SetStringText(block.HeaderText, text, nil, OBJECTIVE_TRACKER_COLOR["Header"]);
-	-- taint check
-	local isSecure, addon = issecurevariable(block, "questLogIndex")
-	if not isSecure and not taintWarned then
-		self:Print("Quest Tracker tainted by " .. tostring(addon))
-		taintWarned = true
+function Quester:QuestTrackerHeaderSetText(HeaderText, text)
+	local block = HeaderText:GetParent()
+	text = GetTaggedTitle(block.questLogIndex, true, false)
+	HeaderText:__QuesterSetText(text)
+end
+
+function Quester:QuestTrackerGetBlock(mod, questID)
+	local block = mod.usedBlocks[questID]
+	if block then
+		if not block.__QuesterHooked then
+			block.HeaderText.__QuesterSetText = block.HeaderText.SetText
+			self:SecureHook(block.HeaderText, "SetText", "QuestTrackerHeaderSetText")
+			block.__QuesterHooked = true
+		end
+
+		-- taint check
+		local isSecure, addon = issecurevariable(block, "questLogIndex")
+		if not isSecure and not taintWarned then
+			self:Print("Quest Tracker tainted by " .. tostring(addon))
+			taintWarned = true
+		end
 	end
 end
 
