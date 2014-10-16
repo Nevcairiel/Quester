@@ -462,7 +462,7 @@ local function ProcessGossip(index, skip, ...)
 		local button = _G["GossipTitleButton"..index]
 		local text, col = button:GetText(), nil
 		if text:match("^|c(.*)%[") then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
-		button:SetText(format("|cff%s[%d] %s|r", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i,...) or 0, text))
+		button:SetText(format("|cff%s[%d] %s|r", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i, ...) or 0, text))
 		GossipResize(button)
 		index = index + 1
 	end
