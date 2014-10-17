@@ -141,7 +141,7 @@ local function getOptionsTable()
 			},
 			questLevel = {
 				name = L["Show Quest Level"],
-				desc = L["Toggle if quest levels are shown in various parts of the UI.\nNote: Changing this option may require your UI to be reloaded to take full effect."],
+				desc = L["Toggle if quest levels are shown in various parts of the UI."] .. "\n" .. L["Note: Changing this option may require your UI to be reloaded to take full effect."],
 				type = "toggle",
 				arg = "questLevels",
 				order = 2,
