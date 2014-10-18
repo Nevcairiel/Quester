@@ -262,6 +262,7 @@ function Quester:OnEnable()
 	self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
 	self:SecureHook(QUEST_TRACKER_MODULE, "GetBlock", "QuestTrackerGetBlock")
+	self:SecureHook(QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook("QuestLogQuests_Update")
@@ -580,8 +581,10 @@ end
 
 function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 	local block = HeaderText:GetParent()
-	text = GetTaggedTitle(block.questLogIndex, true, false)
-	HeaderText:__QuesterSetText(text)
+	if block.__QuesterQuestTracker and block.questLogIndex then
+		text = GetTaggedTitle(block.questLogIndex, true, false)
+		HeaderText:__QuesterSetText(text)
+	end
 end
 
 function Quester:QuestTrackerGetBlock(mod, questID)
@@ -591,6 +594,7 @@ function Quester:QuestTrackerGetBlock(mod, questID)
 			block.HeaderText.__QuesterSetText = block.HeaderText.SetText
 			self:SecureHook(block.HeaderText, "SetText", "QuestTrackerHeaderSetText")
 			block.__QuesterHooked = true
+			block.__QuesterQuestTracker = true
 		end
 
 		-- taint check
@@ -600,6 +604,10 @@ function Quester:QuestTrackerGetBlock(mod, questID)
 			taintWarned = true
 		end
 	end
+end
+
+function Quester:QuestTrackerOnFreeBlock(mod, block)
+	block.__QuesterQuestTracker = nil
 end
 
 function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
