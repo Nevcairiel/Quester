@@ -594,8 +594,8 @@ function Quester:QuestTrackerGetBlock(mod, questID)
 			block.HeaderText.__QuesterSetText = block.HeaderText.SetText
 			self:SecureHook(block.HeaderText, "SetText", "QuestTrackerHeaderSetText")
 			block.__QuesterHooked = true
-			block.__QuesterQuestTracker = true
 		end
+		block.__QuesterQuestTracker = true
 
 		-- taint check
 		local isSecure, addon = issecurevariable(block, "questLogIndex")
