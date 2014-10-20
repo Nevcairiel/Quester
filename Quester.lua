@@ -6,6 +6,10 @@ local defaults = {
 	profile = {
 		-- options
 		questLevels = true,
+		gossipColor = true,
+		questTrackerColor = true,
+		tooltipColor = true,
+
 		removeComplete = true,
 		highlightReward = true,
 
@@ -162,6 +166,35 @@ local function getOptionsTable()
 				arg = "highlightReward",
 				order = 4,
 				width = "full",
+			},
+			colorheader = {
+				type = "header",
+				name = L["Difficulty Coloring"],
+				order = 5,
+			},
+			gossipColor = {
+				name = L["Gossip frames"],
+				desc = L["Enable the coloring of quests according to their difficulty on NPC Gossip frames."],
+				type = "toggle",
+				arg = "gossipColor",
+				order = 6,
+				width = "double",
+			},
+			questTrackerColor = {
+				name = L["Quest Tracker"],
+				desc = L["Enable the coloring of quests according to their difficulty in the quest tracker."],
+				type = "toggle",
+				arg = "questTrackerColor",
+				order = 7,
+				width = "double",
+			},
+			tooltipColor = {
+				name = L["Tooltips"],
+				desc = L["Enable the coloring of quests according to their difficulty in NPC and Item tooltips."],
+				type = "toggle",
+				arg = "tooltipColor",
+				order = 8,
+				width = "double",
 			},
 			soundheader = {
 				type = "header",
@@ -463,7 +496,11 @@ local function ProcessGossip(index, skip, ...)
 		local button = _G["GossipTitleButton"..index]
 		local text, col = button:GetText(), nil
 		if text:match("^|c(.*)%[") then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
-		button:SetText(format("|cff%s[%d] %s|r", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i, ...) or 0, text))
+		if db.gossipColor then
+			button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i, ...) or 0, text))
+		else
+			button:SetText(format("[%d] %s", select(i, ...) or 0, text))
+		end
 		GossipResize(button)
 		index = index + 1
 	end
@@ -493,7 +530,11 @@ function Quester:QUEST_GREETING()
 		end
 		title, level = GetTitle(i-o), GetLevel(i-o)
 		button = _G["QuestTitleButton"..i]
-		button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
+		if db.gossipColor then
+			button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
+		else
+			button:SetText(format("[%d] %s", level, title))
+		end
 		button:SetHeight(button:GetTextHeight() + 2)
 	end
 end
@@ -513,7 +554,7 @@ function Quester:OnTooltipSetUnit(tooltip, ...)
 		if lines[i] then
 			local text = lines[i]:GetText()
 			if quests[text] then
-				lines[i]:SetText(GetTaggedTitle(quests[text], true, true))
+				lines[i]:SetText(GetTaggedTitle(quests[text], db.tooltipColor, true))
 				tooltip:Show()
 			end
 		end
@@ -525,7 +566,7 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 	if items[name] then
 		local it = items[name]
 		if progress[it] then
-			tooltip:AddLine(GetTaggedTitle(progress[it].qid, true, true))
+			tooltip:AddLine(GetTaggedTitle(progress[it].qid, db.tooltipColor, true))
 			local text = GetQuestLogLeaderBoard(progress[it].lid, progress[it].qid)
 			tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
 			tooltip:Show()
@@ -582,7 +623,7 @@ end
 function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 	local block = HeaderText:GetParent()
 	if block.__QuesterQuestTracker and block.questLogIndex then
-		text = GetTaggedTitle(block.questLogIndex, true, false)
+		text = GetTaggedTitle(block.questLogIndex, db.questTrackerColor, false)
 		HeaderText:__QuesterSetText(text)
 	end
 end
