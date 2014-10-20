@@ -6,12 +6,13 @@ local defaults = {
 	profile = {
 		-- options
 		questLevels = true,
+		removeComplete = true,
+		highlightReward = true,
+
+		-- coloring
 		gossipColor = true,
 		questTrackerColor = true,
 		tooltipColor = true,
-
-		removeComplete = true,
-		highlightReward = true,
 
 		-- sounds
 		soundSet = 1,
