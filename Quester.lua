@@ -667,8 +667,8 @@ function Quester:EnvironmentProxy()
 	}, {__index = _G})
 
 	-- quest log/map
-	setfenv(WorldMapQuestPOI_SetTooltip, env)
-	setfenv(WorldMapQuestPOI_AppendTooltip, env)
+	pcall(setfenv, WorldMapQuestPOI_SetTooltip, env)
+	pcall(setfenv, WorldMapQuestPOI_AppendTooltip, env)
 end
 
 function Quester:SetupChatFilter()
