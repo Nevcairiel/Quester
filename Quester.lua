@@ -336,9 +336,16 @@ function Quester:UIErrorsFrame_OnEvent(frame, event, message)
 			end
 		end
 		if name then
-			local perc = tonumber(numItems) / tonumber(numNeeded)
-			self:Pour(message, ColorGradient(perc, 1,0,0, 1,1,0, 0,1,0))
-			return
+			numItems, numNeeded = tonumber(numItems), tonumber(numNeeded)
+			if numItems and numNeeded then
+				local perc = numItems / numNeeded
+				self:Pour(message, ColorGradient(perc, 1,0,0, 1,1,0, 0,1,0))
+				return
+			else
+				--@debug@
+				self:Print("Unable to parse objectives from message: " .. message)
+				--@end-debug@
+			end
 		end
 	end
 	return self.hooks[frame].OnEvent(frame, event, message)
