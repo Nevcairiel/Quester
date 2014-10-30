@@ -413,12 +413,16 @@ function Quester:QUEST_LOG_UPDATE()
 			if isComplete or numObjectives == 0 then
 				if not first and not oldcomplete[title] and numObjectives > 0 then
 					-- completed the quest
-					self:Pour(ERR_QUEST_COMPLETE_S:format(title), 0, 1, 0)
-					if db.jobsdone then
-						PlayQuestSound(QUESTER_SOUND_JOBS_DONE)
-					end
-					if db.removeComplete and IsQuestWatched(index) then
-						RemoveQuestWatch(index)
+					if isComplete == -1 then
+						self:Pour(ERR_QUEST_FAILED_S:format(title), 1, 0, 0)
+					else
+						self:Pour(ERR_QUEST_COMPLETE_S:format(title), 0, 1, 0)
+						if db.jobsdone then
+							PlayQuestSound(QUESTER_SOUND_JOBS_DONE)
+						end
+						if db.removeComplete and IsQuestWatched(index) then
+							RemoveQuestWatch(index)
+						end
 					end
 				end
 				complete[title] = true
