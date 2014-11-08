@@ -5,6 +5,7 @@
 ## Author: Nevcairiel
 ## Version: @project-version@
 ## X-Credits: SmoothQuest by Ammo
+## X-Website: http://www.wowace.com/addons/quester/
 
 ## OptionalDeps: Ace3, LibSink-2.0
 
