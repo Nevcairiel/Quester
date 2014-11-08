@@ -8,11 +8,18 @@ local defaults = {
 		questLevels = true,
 		removeComplete = true,
 		highlightReward = true,
+		trackerMovable = false,
 
 		-- coloring
 		gossipColor = true,
 		questTrackerColor = true,
 		tooltipColor = true,
+
+		-- position
+		pos = {
+			x = nil,
+			y = nil,
+		},
 
 		-- sounds
 		soundSet = 1,
@@ -139,6 +146,22 @@ local function getOptionsTable()
 		get = function(k) return db[k.arg] end,
 		set = function(k, v) db[k.arg] = v end,
 		args = {
+			trackerMovable = {
+				name = L["Unlock Quest Tracker position"],
+				desc = L["Unlock the position of the Objective Tracker, allowing it to be moved by clicking and dragging its header."],
+				type = "toggle",
+				order = 0,
+				arg = "trackerMovable",
+				width = "double",
+				set = function(k, v) db.trackerMovable = v; Quester:ToggleTrackerMovable() end,
+			},
+			trackerReset = {
+				name = L["Reset Position"],
+				desc = L["Reset the position of the Objective Tracker to the default."],
+				type = "execute",
+				order = 0.5,
+				func = function() db.pos.x = nil; db.pos.y = nil; UIParent_ManageFramePositions() end,
+			},
 			behaviorheader = {
 				type = "header",
 				name = L["Behavior Configuration"],
@@ -285,6 +308,17 @@ function Quester:OnInitialize()
 	local optFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Quester", "Quester")
 
 	self:RegisterChatCommand("quester", function() InterfaceOptionsFrame_OpenToCategory(optFrame) end)
+
+	self:RestoreTrackerPosition()
+	hooksecurefunc("UpdateContainerFrameAnchors", function() Quester:RestoreTrackerPosition() end)
+end
+
+function Quester:RestoreTrackerPosition()
+	if db.pos.x and db.pos.y then
+		ObjectiveTrackerFrame:ClearAllPoints()
+		ObjectiveTrackerFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.pos.x, db.pos.y)
+		ObjectiveTrackerFrame:SetPoint("BOTTOM", UIParent, "BOTTOM")
+	end
 end
 
 function Quester:OnEnable()
@@ -309,6 +343,60 @@ function Quester:OnEnable()
 
 	if QuestFrameRewardPanel:IsVisible() then
 		self:QUEST_COMPLETE()
+	end
+
+	if db.trackerMovable then
+		self:ToggleTrackerMovable()
+	end
+end
+
+local function MakeBlockMovable(block, flag)
+	block:EnableMouse(flag)
+
+	if flag then
+		if not block.QuesterMoveLock then
+			block:SetScript("OnMouseDown", function() ObjectiveTrackerFrame:StartMoving() end)
+			block:SetScript("OnMouseUp",
+				function()
+					ObjectiveTrackerFrame:StopMovingOrSizing()
+					db.pos.x = ObjectiveTrackerFrame:GetLeft()
+					db.pos.y = ObjectiveTrackerFrame:GetTop()
+				end
+			)
+			local LockFrame = CreateFrame("Button", nil, block)
+			LockFrame.lock = LockFrame:CreateTexture()
+			LockFrame.lock:SetAllPoints(LockFrame)
+			LockFrame.lock:SetTexture("Interface\\GuildFrame\\GuildFrame")
+			LockFrame.lock:SetTexCoord(0.51660156, 0.53320313, 0.92578125, 0.96679688)
+			LockFrame:SetSize(15, 18)
+			LockFrame:SetPoint("TOPRIGHT", -16, -2)
+			LockFrame:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT") GameTooltip:SetText(L["Lock the Objective Tracker in place"], 1, .82, 0, 1) GameTooltip:AddLine(L["You can unlock it again in the options"], 1, 1, 1, 1) GameTooltip:Show() end)
+			LockFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+			LockFrame:SetScript("OnClick", function() db.trackerMovable = false; Quester:ToggleTrackerMovable() end)
+
+			block.QuesterMoveLock = LockFrame
+		end
+		block.QuesterMoveLock:Show()
+	else
+		if block.QuesterMoveLock then
+			block.QuesterMoveLock:Hide()
+		end
+	end
+end
+
+function Quester:ToggleTrackerMovable()
+	if db.trackerMovable then
+		ObjectiveTrackerFrame:SetMovable(true)
+		ObjectiveTrackerFrame:SetClampedToScreen(true)
+		ObjectiveTrackerFrame:SetClampRectInsets(-26, 0, 0, ObjectiveTrackerFrame:GetHeight() - 26)
+		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.QuestHeader, true)
+		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.AchievementHeader, true)
+		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.ScenarioHeader, true)
+	else
+		ObjectiveTrackerFrame:SetMovable(false)
+		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.QuestHeader, false)
+		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.AchievementHeader, false)
+		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.ScenarioHeader, false)
 	end
 end
 
