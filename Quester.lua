@@ -723,7 +723,7 @@ end
 function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 	local block = HeaderText:GetParent()
 	if block.__QuesterQuestTracker and block.questLogIndex then
-		text = GetTaggedTitle(block.questLogIndex, db.questTrackerColor, false)
+		text = GetTaggedTitle(block.questLogIndex, db.questTrackerColor, true)
 		HeaderText:__QuesterSetText(text)
 	end
 end
