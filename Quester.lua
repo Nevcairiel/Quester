@@ -88,13 +88,29 @@ local function rgb2hex(r, g, b)
 end
 
 local tags = {
-	[DAILY] = "\226\128\162",
+	DAILY = "\226\128\162",
+	GROUP = "+",
+	SCENARIO = "s",
+	DUNGEON = "d",
+	HEROIC_DUNGEON = "d+",
+	RAID = "r"
 }
 
-local function GetQuestTag(groupSize, frequency)
+local function GetQuestTag(groupSize, frequency, tagId, tagName)
 	local tag = ""
 	if frequency == LE_QUEST_FREQUENCY_DAILY or frequency == LE_QUEST_FREQUENCY_WEEKLY then
-		tag = tags[DAILY]
+		tag = tags.DAILY
+	end
+	if tagId == QUEST_TAG_GROUP then
+		tag = tag .. tags.GROUP
+	elseif tagId == QUEST_TAG_SCENARIO then
+		tag = tag .. tags.SCENARIO
+	elseif tagId == QUEST_TAG_DUNGEON then
+		tag = tag .. tags.DUNGEON
+	elseif tagId == QUEST_TAG_HEROIC then
+		tag = tag .. tags.HEROIC_DUNGEON
+	elseif tagId == QUEST_TAG_RAID or tagId == QUEST_TAG_RAID10 or tagId == QUEST_TAG_RAID25 then
+		tag = tag .. tags.RAID
 	end
 	return tag
 end
@@ -102,7 +118,7 @@ end
 local function GetTaggedTitle(i, color, tag)
 	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
 	if not isHeader and title then
-		local tagString = tag and GetQuestTag(groupSize, frequency) or ""
+		local tagString = tag and GetQuestTag(groupSize, frequency, GetQuestTagInfo(questID)) or ""
 		if color then
 			if db.questLevels then
 				title = format("|cff%s[%s%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, tagString, title)
