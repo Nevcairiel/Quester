@@ -540,7 +540,7 @@ function Quester:QUEST_LOG_UPDATE()
 					if objType == "item" or objType == "object" then
 						itemDesc, numItems, numNeeded = MatchObject(objDesc)
 						items[itemDesc] = objDesc -- used for tooltips
-					elseif objType == "monster" then
+					elseif objType == "monster" or objType == "player" then
 						itemDesc, numItems, numNeeded = MatchMonster(objDesc)
 						if itemDesc == nil or numItems == nil or numNeeded == nil then
 							--Sometimes we get objectives like "Find Mankrik's Wife: 0/1", which are listed as "monster".
