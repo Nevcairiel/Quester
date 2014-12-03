@@ -9,6 +9,7 @@ local defaults = {
 		removeComplete = true,
 		highlightReward = true,
 		trackerMovable = false,
+		showObjectivePercentages = true,
 
 		-- coloring
 		gossipColor = true,
@@ -207,6 +208,14 @@ local function getOptionsTable()
 				order = 4,
 				width = "full",
 			},
+			showObjectivePercentages = {
+				name = L["Always show objective percentage values on progress bars"],
+				desc = L["Toggling this option may require a UI reload to fully take effect."],
+				type = "toggle",
+				arg = "showObjectivePercentages",
+				order = 4.5,
+				width = "full",
+			},
 			colorheader = {
 				type = "header",
 				name = L["Difficulty Coloring"],
@@ -349,6 +358,8 @@ function Quester:OnEnable()
 	self:SecureHook(QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
+	self:SecureHook(QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
+	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook("QuestLogQuests_Update")
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
@@ -771,6 +782,14 @@ function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, l
 	if progress[text] then
 		local line = obj:GetLine(block, objectiveKey, lineType)
 		line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+	end
+end
+
+function Quester:ObjectiveTracker_AddProgressBar(obj, block, line, questID)
+	if db.showObjectivePercentages then
+		line.ProgressBar.Bar:SetScript("OnEnter", nil)
+		line.ProgressBar.Bar:SetScript("OnLeave", nil)
+		line.ProgressBar.Bar.Label:Show()
 	end
 end
 
