@@ -1,4 +1,4 @@
-local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceEvent-3.0", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
+local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
 local db, taintWarned
@@ -336,6 +336,9 @@ function Quester:OnInitialize()
 
 	self:RestoreTrackerPosition()
 	hooksecurefunc("UpdateContainerFrameAnchors", function() Quester:RestoreTrackerPosition() end)
+
+	self.eventFrame = CreateFrame("Frame", "QuesterEventFrame")
+	self.eventFrame:SetScript("OnEvent", function(frame, event, ...) Quester:HandleEvent(event, ...) end)
 end
 
 function Quester:RestoreTrackerPosition()
@@ -343,6 +346,17 @@ function Quester:RestoreTrackerPosition()
 		ObjectiveTrackerFrame:ClearAllPoints()
 		ObjectiveTrackerFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.pos.x, db.pos.y)
 		ObjectiveTrackerFrame:SetPoint("BOTTOM", UIParent, "BOTTOM")
+	end
+end
+
+function Quester:RegisterEvent(event)
+	assert(self[event], "Event Handler missing for event " .. event)
+	self.eventFrame:RegisterEvent(event)
+end
+
+function Quester:HandleEvent(event, ...)
+	if event and self[event] then
+		self[event](self, ...)
 	end
 end
 
@@ -375,6 +389,10 @@ function Quester:OnEnable()
 	if db.trackerMovable then
 		self:ToggleTrackerMovable()
 	end
+end
+
+function Quester:OnDisable()
+	self.eventFrame:UnregisterAllEvents()
 end
 
 local function MakeBlockMovable(block, flag)
