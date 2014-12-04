@@ -495,15 +495,10 @@ end
 local function emptyAll()
 	wipe(items)
 	wipe(oldcomplete)
-	for k, v in pairs(complete) do
-		oldcomplete[k] = v
-		complete[k] = nil
-	end
 	wipe(oldquests)
-	for k, v in pairs(quests) do
-		oldquests[k] = v
-		quests[k] = nil
-	end
+	complete, oldcomplete = oldcomplete, complete
+	quests, oldquests = oldquests, quests
+
 	for k, v in pairs(progress) do
 		if type(v) == "table" then
 			wipe(v)
