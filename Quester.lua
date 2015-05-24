@@ -781,7 +781,9 @@ function Quester:QuestTrackerGetBlock(mod, questID)
 		-- taint check
 		local isSecure, addon = issecurevariable(block, "questLogIndex")
 		if not isSecure and not taintWarned then
-			self:Print("Quest Tracker tainted by " .. tostring(addon))
+			if not IsAddOnLoaded("!QuestItemButtonFix") then
+				self:Print("Quest Tracker tainted by " .. tostring(addon))
+			end
 			taintWarned = true
 		end
 	end
