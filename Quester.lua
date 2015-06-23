@@ -563,22 +563,31 @@ function Quester:QUEST_LOG_UPDATE()
 				if objDesc then
 					if objType == "item" or objType == "object" then
 						itemDesc, numItems, numNeeded = MatchObject(objDesc)
-						items[itemDesc] = objDesc -- used for tooltips
+						if itemDesc then
+							items[itemDesc] = objDesc -- used for tooltips
+						else
+							--@debug@
+							print("Unable to parse objective, type: " .. objType .. ", on quest: " .. title .. ", objective: " .. objDesc)
+							--@end-debug@
+							numItems, numNeeded = (objComplete and 1 or 0), 1
+						end
 					elseif objType == "monster" or objType == "player" then
 						itemDesc, numItems, numNeeded = MatchMonster(objDesc)
 						if itemDesc == nil or numItems == nil or numNeeded == nil then
 							--Sometimes we get objectives like "Find Mankrik's Wife: 0/1", which are listed as "monster".
 							itemDesc, numItems, numNeeded = MatchObject(objDesc)
 						end
-						if mobs[itemDesc] then
-							if type(mobs[itemDesc]) == "string" then
-								local s = mobs[itemDesc]
-								mobs[itemDesc] = getTable()
-								tinsert(mobs[itemDesc], s)
+						if itemDesc then
+							if mobs[itemDesc] then
+								if type(mobs[itemDesc]) == "string" then
+									local s = mobs[itemDesc]
+									mobs[itemDesc] = getTable()
+									tinsert(mobs[itemDesc], s)
+								end
+								tinsert(mobs[itemDesc], objDesc)
+							else
+								mobs[itemDesc] = objDesc
 							end
-							tinsert(mobs[itemDesc], objDesc)
-						else
-							mobs[itemDesc] = objDesc
 						end
 					elseif objType == "reputation" then
 						itemDesc, numItems, numNeeded = MatchFaction(objDesc)
