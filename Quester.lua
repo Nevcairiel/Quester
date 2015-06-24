@@ -566,9 +566,6 @@ function Quester:QUEST_LOG_UPDATE()
 						if itemDesc then
 							items[itemDesc] = objDesc -- used for tooltips
 						else
-							--@debug@
-							print("Unable to parse objective, type: " .. objType .. ", on quest: " .. title .. ", objective: " .. objDesc)
-							--@end-debug@
 							numItems, numNeeded = (objComplete and 1 or 0), 1
 						end
 					elseif objType == "monster" or objType == "player" then
