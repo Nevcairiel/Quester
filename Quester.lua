@@ -558,12 +558,15 @@ function Quester:QUEST_LOG_UPDATE()
 
 			-- enumerate all objectives and store them
 			for o = 1, numObjectives do
-				local itemDesc, numItems, numNeeded
+				local itemDesc, numItems, numNeeded, objKey
 				local objDesc, objType, objComplete = GetQuestLogLeaderBoard(o, index)
 				if objDesc then
 					if objType == "item" or objType == "object" then
 						itemDesc, numItems, numNeeded = MatchObject(objDesc)
 						if itemDesc then
+							if tonumber(numNeeded) and tonumber(numItems) and tonumber(numItems) > tonumber(numNeeded) then
+								objKey = objDesc:gsub(numItems, numNeeded)
+							end
 							items[itemDesc] = objDesc -- used for tooltips
 						else
 							numItems, numNeeded = (objComplete and 1 or 0), 1
@@ -608,7 +611,7 @@ function Quester:QUEST_LOG_UPDATE()
 						progress[objDesc].n = numNeeded
 						progress[objDesc].perc = numItems / numNeeded
 						progress[objDesc].done = objComplete
-						local c = title .. objDesc
+						local c = objKey or (title .. objDesc)
 						if objComplete then
 							complete[c] = true
 						end
