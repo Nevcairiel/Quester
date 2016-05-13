@@ -648,10 +648,13 @@ local function ProcessGossip(index, skip, ...)
 		local button = _G["GossipTitleButton"..index]
 		local text, col = button:GetText(), nil
 		if text:match("^|c(.*)%[") then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
-		if db.gossipColor then
-			button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(select(i, ...) or 0)), select(i, ...) or 0, text))
+		local level = select(i, ...) or 0
+		if level == -1 then
+			-- keep the text untouched
+		elseif db.gossipColor then
+			button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, text))
 		else
-			button:SetText(format("[%d] %s", select(i, ...) or 0, text))
+			button:SetText(format("[%d] %s", level, text))
 		end
 		GossipResize(button)
 		index = index + 1
@@ -682,7 +685,9 @@ function Quester:QUEST_GREETING()
 		end
 		title, level = GetTitle(i-o), GetLevel(i-o)
 		button = _G["QuestTitleButton"..i]
-		if db.gossipColor then
+		if level == -1 then
+			-- keep the text untouched
+		elseif db.gossipColor then
 			button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
 		else
 			button:SetText(format("[%d] %s", level, title))
