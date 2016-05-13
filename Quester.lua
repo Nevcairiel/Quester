@@ -1,6 +1,8 @@
 local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
+local IsLegion = select(4, GetBuildInfo()) >= 70000
+
 local db, taintWarned
 local defaults = {
 	profile = {
@@ -660,10 +662,10 @@ function Quester:GOSSIP_SHOW()
 	if not GossipFrame:IsVisible() or not db.questLevels then return end
 	local buttonindex = 1
 	if GetGossipAvailableQuests() then
-		buttonindex = ProcessGossip(buttonindex, 6, GetGossipAvailableQuests())
+		buttonindex = ProcessGossip(buttonindex, IsLegion and 7 or 6, GetGossipAvailableQuests())
 	end
 	if GetGossipActiveQuests() then
-		buttonindex = ProcessGossip(buttonindex, 5, GetGossipActiveQuests())
+		buttonindex = ProcessGossip(buttonindex, IsLegion and 6 or 5, GetGossipActiveQuests())
 	end
 end
 
