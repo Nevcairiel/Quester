@@ -447,8 +447,9 @@ function Quester:ToggleTrackerMovable()
 	end
 end
 
-function Quester:UIErrorsFrame_OnEvent(frame, event, message)
+function Quester:UIErrorsFrame_OnEvent(frame, event, ...)
 	if event == "UI_INFO_MESSAGE" then
+		local message = IsLegion and select(2, ...) or (...)
 		local name, numItems, numNeeded = MatchErrObject(message)
 		if not name then
 			name, numItems, numNeeded = MatchErrKill(message)
@@ -483,7 +484,7 @@ function Quester:UIErrorsFrame_OnEvent(frame, event, message)
 			end
 		end
 	end
-	return self.hooks[frame].OnEvent(frame, event, message)
+	return self.hooks[frame].OnEvent(frame, event, ...)
 end
 
 local function getTable()
