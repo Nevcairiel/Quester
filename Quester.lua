@@ -725,7 +725,9 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 		if progress[it] then
 			tooltip:AddLine(GetTaggedTitle(progress[it].qid, db.tooltipColor, true))
 			local text = GetQuestLogLeaderBoard(progress[it].lid, progress[it].qid)
-			tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+			if text then
+				tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+			end
 			tooltip:Show()
 		end
 	end
