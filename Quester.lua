@@ -119,6 +119,7 @@ local function GetQuestTag(groupSize, frequency, tagId, tagName)
 end
 
 local function GetTaggedTitle(i, color, tag)
+	if not i or i == 0 then return nil end
 	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(i)
 	if not isHeader and title then
 		local tagString = tag and GetQuestTag(groupSize, frequency, GetQuestTagInfo(questID)) or ""
@@ -136,7 +137,7 @@ local function GetTaggedTitle(i, color, tag)
 end
 
 local function GetChatTaggedTitle(i)
-	if not i then return nil end
+	if not i or i == 0 then return nil end
 	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(i)
 	if isHeader or not title then return end
 	return format("(%s%s) %s", level, GetQuestTag(groupSize, frequency), title)
@@ -731,7 +732,7 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 		local it = items[name]
 		if progress[it] then
 			local index = GetQuestLogIndexByID(progress[it].qid)
-			if index then
+			if index and index > 0 then
 				tooltip:AddLine(GetTaggedTitle(index, db.tooltipColor, true))
 				local text = GetQuestLogLeaderBoard(progress[it].lid, index)
 				if text then
