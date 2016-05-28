@@ -119,7 +119,7 @@ local function GetQuestTag(groupSize, frequency, tagId, tagName)
 end
 
 local function GetTaggedTitle(i, color, tag)
-	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(i)
 	if not isHeader and title then
 		local tagString = tag and GetQuestTag(groupSize, frequency, GetQuestTagInfo(questID)) or ""
 		if color then
@@ -132,12 +132,12 @@ local function GetTaggedTitle(i, color, tag)
 			title = format("[%s%s] %s", level, tagString, title)
 		end
 	end
-	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory
+	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory
 end
 
 local function GetChatTaggedTitle(i)
 	if not i then return nil end
-	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(i)
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(i)
 	if isHeader or not title then return end
 	return format("(%s%s) %s", level, GetQuestTag(groupSize, frequency), title)
 end
@@ -530,7 +530,7 @@ function Quester:QUEST_LOG_UPDATE()
 	for index = 1, numEntries do
 		-- the quest log is stateful, and some functions require an active entry
 		SelectQuestLogEntry(index)
-		local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = GetQuestLogTitle(index)
+		local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(index)
 		if not isHeader then
 			local questDescription, questObjectives = GetQuestLogQuestText(index)
 			-- Some other quest addons hook GetQuestLogTitle to add levels to the names.  This is annoying, so strip out the common format for it.
