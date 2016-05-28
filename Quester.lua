@@ -367,6 +367,7 @@ function Quester:OnEnable()
 	self:RegisterEvent("GOSSIP_SHOW")
 	self:RegisterEvent("QUEST_GREETING")
 	self:RegisterEvent("QUEST_COMPLETE")
+	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
 
 	self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
@@ -515,6 +516,12 @@ local function emptyAll()
 			table_cache[v] = true
 		end
 		mobs[k] = nil
+	end
+end
+
+function Quester:UNIT_QUEST_LOG_CHANGED(unit, ...)
+	if unit == "player" then
+		self:QUEST_LOG_UPDATE()
 	end
 end
 
