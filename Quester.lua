@@ -531,7 +531,7 @@ function Quester:QUEST_LOG_UPDATE()
 		-- the quest log is stateful, and some functions require an active entry
 		SelectQuestLogEntry(index)
 		local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(index)
-		if not isHeader then
+		if not isHeader and not isBounty then
 			local questDescription, questObjectives = GetQuestLogQuestText(index)
 			-- Some other quest addons hook GetQuestLogTitle to add levels to the names.  This is annoying, so strip out the common format for it.
 			if title:match("^%[") then title = title:match("^%[[^%]]+%]%s?(.*)") end
