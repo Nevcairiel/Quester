@@ -538,13 +538,13 @@ function Quester:QUEST_LOG_UPDATE()
 		-- the quest log is stateful, and some functions require an active entry
 		SelectQuestLogEntry(index)
 		local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(index)
-		if not isHeader and not isBounty then
+		if not isHeader and not isBounty and questID and questID ~= 0 then
 			local questDescription, questObjectives = GetQuestLogQuestText(index)
 			-- Some other quest addons hook GetQuestLogTitle to add levels to the names.  This is annoying, so strip out the common format for it.
 			if title:match("^%[") then title = title:match("^%[[^%]]+%]%s?(.*)") end
 
 			-- store the quest in our lookup table
-			quests[title] = index
+			quests[title] = questID
 
 			-- process objectives
 			local numObjectives = GetNumQuestLeaderBoards(index)
@@ -615,7 +615,7 @@ function Quester:QUEST_LOG_UPDATE()
 							progress[objDesc] = getTable()
 						end
 						progress[objDesc].q = title
-						progress[objDesc].qid = index
+						progress[objDesc].qid = questID
 						progress[objDesc].lid = o
 						progress[objDesc].i = numItems
 						progress[objDesc].n = numNeeded
@@ -718,7 +718,7 @@ function Quester:OnTooltipSetUnit(tooltip, ...)
 		if lines[i] then
 			local text = lines[i]:GetText()
 			if quests[text] then
-				lines[i]:SetText(GetTaggedTitle(quests[text], db.tooltipColor, true))
+				lines[i]:SetText(GetTaggedTitle(GetQuestLogIndexByID(quests[text]), db.tooltipColor, true))
 				tooltip:Show()
 			end
 		end
@@ -730,12 +730,15 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 	if items[name] then
 		local it = items[name]
 		if progress[it] then
-			tooltip:AddLine(GetTaggedTitle(progress[it].qid, db.tooltipColor, true))
-			local text = GetQuestLogLeaderBoard(progress[it].lid, progress[it].qid)
-			if text then
-				tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+			local index = GetQuestLogIndexByID(progress[it].qid)
+			if index then
+				tooltip:AddLine(GetTaggedTitle(index, db.tooltipColor, true))
+				local text = GetQuestLogLeaderBoard(progress[it].lid, index)
+				if text then
+					tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+				end
+				tooltip:Show()
 			end
-			tooltip:Show()
 		end
 	end
 end
@@ -848,7 +851,7 @@ end
 
 function Quester:SetupChatFilter()
 	local function process(full, level, partial)
-		return full:gsub(partial, GetChatTaggedTitle(quests[partial]) or "("..level..") "..partial)
+		return full:gsub(partial, GetChatTaggedTitle(GetQuestLogIndexByID(quests[partial])) or "("..level..") "..partial)
 	end
 	local function filter(self, event, msg, ...)
 		if msg then
