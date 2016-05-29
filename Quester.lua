@@ -852,7 +852,7 @@ end
 
 function Quester:SetupChatFilter()
 	local function process(full, level, partial)
-		return full:gsub(partial, GetChatTaggedTitle(GetQuestLogIndexByID(quests[partial])) or "("..level..") "..partial)
+		return full:gsub(partial, quests[partial] and GetChatTaggedTitle(GetQuestLogIndexByID(quests[partial])) or "("..level..") "..partial)
 	end
 	local function filter(self, event, msg, ...)
 		if msg then
