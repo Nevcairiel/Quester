@@ -805,9 +805,12 @@ end
 
 function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 	local block = HeaderText:GetParent()
-	if block.__QuesterQuestTracker and block.questLogIndex then
-		text = GetTaggedTitle(block.questLogIndex, db.questTrackerColor, true)
-		HeaderText:__QuesterSetText(text)
+	if block.__QuesterQuestTracker and block.id then
+		local questLogIndex = GetQuestLogIndexByID(block.id)
+		if questLogIndex then
+			text = GetTaggedTitle(questLogIndex, db.questTrackerColor, true)
+			HeaderText:__QuesterSetText(text)
+		end
 	end
 end
 
@@ -822,7 +825,7 @@ function Quester:QuestTrackerGetBlock(mod, questID)
 		block.__QuesterQuestTracker = true
 
 		-- taint check
-		local isSecure, addon = issecurevariable(block, "questLogIndex")
+		local isSecure, addon = issecurevariable(block, "id")
 		if not isSecure and not taintWarned then
 			if not IsAddOnLoaded("!QuestItemButtonFix") then
 				self:Print("Quest Tracker tainted by " .. tostring(addon))
