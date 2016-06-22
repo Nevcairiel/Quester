@@ -377,8 +377,10 @@ function Quester:OnEnable()
 	self:SecureHook(QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
+	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
+	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook("QuestLogQuests_Update")
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
@@ -656,9 +658,21 @@ function Quester:QUEST_LOG_UPDATE()
 	-- restore previous questlog selection
 	SelectQuestLogEntry(startingQuestLogSelection)
 
+	-- process watched world quests
+	for i = 1, GetNumWorldQuestWatches() do
+		local watchedWorldQuestID = GetWorldQuestWatchInfo(i)
+		local isInArea, isOnMap, numObjectives, taskName, displayAsObjective = GetTaskInfo(watchedWorldQuestID)
+
+		quests[taskName] = watchedWorldQuestID
+		for o = 1, numObjectives do
+			processObjective(watchedWorldQuestID, taskName, true, o, GetQuestObjectiveInfo(watchedWorldQuestID, o, false))
+		end
+	end
+
 	-- update the objective tracker
 	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE)
 	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE)
+	self:UpdateObjectiveTracker(WORLD_QUEST_TRACKER_MODULE)
 
 	-- update any open dialogs
 	self:QUEST_GREETING()
@@ -842,9 +856,19 @@ function Quester:QuestTrackerOnFreeBlock(mod, block)
 end
 
 function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
-	if progress[text] then
-		local line = obj:GetLine(block, objectiveKey, lineType)
-		line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+	if obj.ShowWorldQuests and colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
+		if db.questTrackerColor then
+			text = select(4, GetTaskInfo(block.id))
+			if text then
+				local line = obj:GetLine(block, objectiveKey, lineType)
+				line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
+			end
+		end
+	else
+		if progress[text] then
+			local line = obj:GetLine(block, objectiveKey, lineType)
+			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+		end
 	end
 end
 
