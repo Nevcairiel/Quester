@@ -748,8 +748,11 @@ function Quester:OnTooltipSetUnit(tooltip, ...)
 		if lines[i] then
 			local text = lines[i]:GetText()
 			if quests[text] then
-				lines[i]:SetText(GetTaggedTitle(GetQuestLogIndexByID(quests[text]), db.tooltipColor, true))
-				tooltip:Show()
+				local index = GetQuestLogIndexByID(quests[text])
+				if index and index > 0 then
+					lines[i]:SetText(GetTaggedTitle(index, db.tooltipColor, true))
+					tooltip:Show()
+				end
 			end
 		end
 	end
