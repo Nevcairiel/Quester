@@ -367,6 +367,7 @@ function Quester:OnEnable()
 	self:RegisterEvent("QUEST_GREETING")
 	self:RegisterEvent("QUEST_COMPLETE")
 	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
+	self:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 
 	self:RegisterEvent("PLAYER_LEAVING_WORLD")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -527,6 +528,10 @@ function Quester:UNIT_QUEST_LOG_CHANGED(unit, ...)
 	if unit == "player" then
 		self:QUEST_LOG_UPDATE()
 	end
+end
+
+function Quester:QUEST_WATCH_LIST_CHANGED()
+	self:QUEST_LOG_UPDATE()
 end
 
 function Quester:PLAYER_LEAVING_WORLD()
