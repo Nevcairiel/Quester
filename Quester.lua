@@ -536,6 +536,72 @@ function Quester:PLAYER_ENTERING_WORLD()
 	self:QUEST_LOG_UPDATE()
 end
 
+local function processObjective(questID, questTitle, isTask, objIndex, objDesc, objType, objComplete)
+	local itemDesc, numItems, numNeeded, objKey
+	if objDesc then
+		if objType == "item" or objType == "object" then
+			itemDesc, numItems, numNeeded = MatchObject(objDesc)
+			if itemDesc then
+				if tonumber(numNeeded) and tonumber(numItems) and tonumber(numItems) > tonumber(numNeeded) then
+					objKey = objDesc:gsub(numItems, numNeeded)
+				end
+				items[itemDesc] = objDesc -- used for tooltips
+			else
+				numItems, numNeeded = (objComplete and 1 or 0), 1
+			end
+		elseif objType == "monster" or objType == "player" then
+			itemDesc, numItems, numNeeded = MatchMonster(objDesc)
+			if itemDesc == nil or numItems == nil or numNeeded == nil then
+				--Sometimes we get objectives like "Find Mankrik's Wife: 0/1", which are listed as "monster".
+				itemDesc, numItems, numNeeded = MatchObject(objDesc)
+			end
+			if itemDesc then
+				if mobs[itemDesc] then
+					if type(mobs[itemDesc]) == "string" then
+						local s = mobs[itemDesc]
+						mobs[itemDesc] = getTable()
+						tinsert(mobs[itemDesc], s)
+					end
+					tinsert(mobs[itemDesc], objDesc)
+				else
+					mobs[itemDesc] = objDesc
+				end
+			end
+		elseif objType == "reputation" then
+			itemDesc, numItems, numNeeded = MatchFaction(objDesc)
+			numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
+		elseif objType == "event" or objType == "log" or objType == "spell" or objType == "progressbar" then
+			itemDesc, numNeeded, numItems = objDesc, 1, (objComplete and 1 or 0)
+		else
+			--@debug@
+			print("Unknown quest objective type: " .. objType .. ", on quest: " .. questTitle .. ", objective: " .. objDesc)
+			--@end-debug@
+		end
+		numNeeded, numItems = tonumber(numNeeded), tonumber(numItems)
+		if numNeeded and numNeeded > 0 then
+			if not progress[objDesc] then
+				progress[objDesc] = getTable()
+			end
+			progress[objDesc].q = questTitle
+			progress[objDesc].qid = questID
+			progress[objDesc].lid = objIndex
+			progress[objDesc].i = numItems
+			progress[objDesc].n = numNeeded
+			progress[objDesc].perc = numItems / numNeeded
+			progress[objDesc].done = objComplete
+			local c = objKey or (questTitle .. objDesc)
+			if objComplete then
+				complete[c] = true
+			end
+			if not first and not complete[questTitle] and objComplete and not oldcomplete[c] and (not isTask or oldquests[questTitle]) then
+				if db.morework then
+					PlayQuestSound(QUESTER_SOUND_MORE_WORK)
+				end
+			end
+		end
+	end
+end
+
 function Quester:QUEST_LOG_UPDATE()
 	-- check if updates are disabled (ie. during loading screens)
 	if blockQuestUpdate then return end
@@ -553,7 +619,6 @@ function Quester:QUEST_LOG_UPDATE()
 		SelectQuestLogEntry(index)
 		local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(index)
 		if not isHeader and not isBounty and questID and questID ~= 0 then
-			local questDescription, questObjectives = GetQuestLogQuestText(index)
 			-- Some other quest addons hook GetQuestLogTitle to add levels to the names.  This is annoying, so strip out the common format for it.
 			if title:match("^%[") then title = title:match("^%[[^%]]+%]%s?(.*)") end
 
@@ -582,70 +647,7 @@ function Quester:QUEST_LOG_UPDATE()
 
 			-- enumerate all objectives and store them
 			for o = 1, numObjectives do
-				local itemDesc, numItems, numNeeded, objKey
-				local objDesc, objType, objComplete = GetQuestLogLeaderBoard(o, index)
-				if objDesc then
-					if objType == "item" or objType == "object" then
-						itemDesc, numItems, numNeeded = MatchObject(objDesc)
-						if itemDesc then
-							if tonumber(numNeeded) and tonumber(numItems) and tonumber(numItems) > tonumber(numNeeded) then
-								objKey = objDesc:gsub(numItems, numNeeded)
-							end
-							items[itemDesc] = objDesc -- used for tooltips
-						else
-							numItems, numNeeded = (objComplete and 1 or 0), 1
-						end
-					elseif objType == "monster" or objType == "player" then
-						itemDesc, numItems, numNeeded = MatchMonster(objDesc)
-						if itemDesc == nil or numItems == nil or numNeeded == nil then
-							--Sometimes we get objectives like "Find Mankrik's Wife: 0/1", which are listed as "monster".
-							itemDesc, numItems, numNeeded = MatchObject(objDesc)
-						end
-						if itemDesc then
-							if mobs[itemDesc] then
-								if type(mobs[itemDesc]) == "string" then
-									local s = mobs[itemDesc]
-									mobs[itemDesc] = getTable()
-									tinsert(mobs[itemDesc], s)
-								end
-								tinsert(mobs[itemDesc], objDesc)
-							else
-								mobs[itemDesc] = objDesc
-							end
-						end
-					elseif objType == "reputation" then
-						itemDesc, numItems, numNeeded = MatchFaction(objDesc)
-						numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
-					elseif objType == "event" or objType == "log" or objType == "spell" or objType == "progressbar" then
-						itemDesc, numNeeded, numItems = objDesc, 1, (objComplete and 1 or 0)
-					else
-						--@debug@
-						print("Unknown quest objective type: " .. objType .. ", on quest: " .. title .. ", objective: " .. objDesc)
-						--@end-debug@
-					end
-					numNeeded, numItems = tonumber(numNeeded), tonumber(numItems)
-					if numNeeded and numNeeded > 0 then
-						if not progress[objDesc] then
-							progress[objDesc] = getTable()
-						end
-						progress[objDesc].q = title
-						progress[objDesc].qid = questID
-						progress[objDesc].lid = o
-						progress[objDesc].i = numItems
-						progress[objDesc].n = numNeeded
-						progress[objDesc].perc = numItems / numNeeded
-						progress[objDesc].done = objComplete
-						local c = objKey or (title .. objDesc)
-						if objComplete then
-							complete[c] = true
-						end
-						if not first and not complete[title] and objComplete and not oldcomplete[c] and (not isTask or oldquests[title]) then
-							if db.morework then
-								PlayQuestSound(QUESTER_SOUND_MORE_WORK)
-							end
-						end
-					end
-				end
+				processObjective(questID, title, isTask, o, GetQuestLogLeaderBoard(o, index))
 			end
 		end
 	end
