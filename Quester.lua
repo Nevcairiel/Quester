@@ -1,8 +1,6 @@
 local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
-local IsLegion = select(4, GetBuildInfo()) >= 70000
-
 local db, taintWarned
 local defaults = {
 	profile = {
@@ -451,7 +449,7 @@ end
 
 function Quester:UIErrorsFrame_OnEvent(frame, event, ...)
 	if event == "UI_INFO_MESSAGE" then
-		local message = IsLegion and select(2, ...) or (...)
+		local category, message = ...
 		local name, numItems, numNeeded = MatchErrObject(message)
 		if not name then
 			name, numItems, numNeeded = MatchErrKill(message)
@@ -674,10 +672,10 @@ function Quester:GOSSIP_SHOW()
 	if not GossipFrame:IsVisible() or not db.questLevels then return end
 	local buttonindex = 1
 	if GetGossipAvailableQuests() then
-		buttonindex = ProcessGossip(buttonindex, IsLegion and 7 or 6, GetGossipAvailableQuests())
+		buttonindex = ProcessGossip(buttonindex, 7, GetGossipAvailableQuests())
 	end
 	if GetGossipActiveQuests() then
-		buttonindex = ProcessGossip(buttonindex, IsLegion and 6 or 5, GetGossipActiveQuests())
+		buttonindex = ProcessGossip(buttonindex, 6, GetGossipActiveQuests())
 	end
 end
 
