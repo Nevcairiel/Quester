@@ -323,7 +323,7 @@ local function PlayQuestSound(index)
 	PlaySoundFile(sounds[soundSet][index])
 end
 
-local first = true
+local first, blockQuestUpdate = true, nil
 function Quester:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("QuesterDB", defaults, true)
 	db = self.db.profile
@@ -367,6 +367,9 @@ function Quester:OnEnable()
 	self:RegisterEvent("QUEST_GREETING")
 	self:RegisterEvent("QUEST_COMPLETE")
 	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
+
+	self:RegisterEvent("PLAYER_LEAVING_WORLD")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 	self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
@@ -524,7 +527,19 @@ function Quester:UNIT_QUEST_LOG_CHANGED(unit, ...)
 	end
 end
 
+function Quester:PLAYER_LEAVING_WORLD()
+	blockQuestUpdate = true
+end
+
+function Quester:PLAYER_ENTERING_WORLD()
+	blockQuestUpdate = nil
+	self:QUEST_LOG_UPDATE()
+end
+
 function Quester:QUEST_LOG_UPDATE()
+	-- check if updates are disabled (ie. during loading screens)
+	if blockQuestUpdate then return end
+
 	-- clear previous data cache
 	emptyAll()
 
