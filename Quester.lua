@@ -668,9 +668,11 @@ function Quester:QUEST_LOG_UPDATE()
 		local watchedWorldQuestID = GetWorldQuestWatchInfo(i)
 		local isInArea, isOnMap, numObjectives, taskName, displayAsObjective = GetTaskInfo(watchedWorldQuestID)
 
-		quests[taskName] = watchedWorldQuestID
-		for o = 1, numObjectives do
-			processObjective(watchedWorldQuestID, taskName, true, o, GetQuestObjectiveInfo(watchedWorldQuestID, o, false))
+		if taskName then
+			quests[taskName] = watchedWorldQuestID
+			for o = 1, numObjectives do
+				processObjective(watchedWorldQuestID, taskName, true, o, GetQuestObjectiveInfo(watchedWorldQuestID, o, false))
+			end
 		end
 	end
 
