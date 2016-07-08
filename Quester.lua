@@ -613,6 +613,9 @@ function Quester:QUEST_LOG_UPDATE()
 	-- check if updates are disabled (ie. during loading screens)
 	if blockQuestUpdate then return end
 
+	-- no re-entry
+	blockQuestUpdate = true
+
 	-- clear previous data cache
 	emptyAll()
 
@@ -684,6 +687,8 @@ function Quester:QUEST_LOG_UPDATE()
 	-- update any open dialogs
 	self:QUEST_GREETING()
 	self:GOSSIP_SHOW()
+
+	blockQuestUpdate = nil
 end
 
 local function ProcessGossip(index, skip, ...)
