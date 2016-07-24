@@ -35,7 +35,7 @@ local defaults = {
 }
 
 -- "Deformat" the pattern to find their argument order
-local MatchObject, MatchMonster, MatchFaction, MatchErrObject, MatchErrFound, MatchErrKill, MatchErrCompleted
+local MatchObject, MatchMonster, MatchPlayer, MatchFaction, MatchErrObject, MatchErrFound, MatchErrKill, MatchErrCompleted
 do
 	local function GetPermute3(pattern)
 		local one, two, three = pattern:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
@@ -53,6 +53,7 @@ do
 
 	MatchObject = GetMatcher(QUEST_OBJECTS_FOUND)
 	MatchMonster = GetMatcher(QUEST_MONSTERS_KILLED)
+	MatchPlayer = GetMatcher(QUEST_PLAYERS_KILLED)
 	MatchFaction = GetMatcher(QUEST_FACTION_NEEDED)
 
 	MatchErrObject = GetMatcher(ERR_QUEST_ADD_ITEM_SII)
@@ -556,7 +557,7 @@ local function processObjective(questID, questTitle, isTask, objIndex, objDesc, 
 			else
 				numItems, numNeeded = (objComplete and 1 or 0), 1
 			end
-		elseif objType == "monster" or objType == "player" then
+		elseif objType == "monster" then
 			itemDesc, numItems, numNeeded = MatchMonster(objDesc)
 			if itemDesc == nil or numItems == nil or numNeeded == nil then
 				--Sometimes we get objectives like "Find Mankrik's Wife: 0/1", which are listed as "monster".
@@ -574,6 +575,14 @@ local function processObjective(questID, questTitle, isTask, objIndex, objDesc, 
 					mobs[itemDesc] = objDesc
 				end
 			end
+		elseif objType == "player" then
+			itemDesc, numItems, numNeeded = MatchPlayer(objDesc)
+
+			-- it is unknown if some quests marked as "player" use the Monster syntax,
+			-- but attempt to parse if it failed above
+			if itemDesc == nil or numItems == nil or numNeeded == nil then
+				itemDesc, numItems, numNeeded = MatchMonster(objDesc)
+			end
 		elseif objType == "reputation" then
 			itemDesc, numItems, numNeeded = MatchFaction(objDesc)
 			numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
@@ -585,7 +594,7 @@ local function processObjective(questID, questTitle, isTask, objIndex, objDesc, 
 			--@end-debug@
 		end
 		numNeeded, numItems = tonumber(numNeeded), tonumber(numItems)
-		if numNeeded and numNeeded > 0 then
+		if numNeeded and numNeeded > 0 and numItems then
 			if not progress[objDesc] then
 				progress[objDesc] = getTable()
 			end
