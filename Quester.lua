@@ -51,10 +51,16 @@ do
 		return function(text) return permuteFn(text:match(match_pattern)) end
 	end
 
+	local function GetMatcherNonGreedy(pattern, greedyComponent)
+		local permuteFn = loadstring(GetPermute3(pattern))()
+		local match_pattern = "^" .. pattern:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub(("(%%%%%d$[^()])"):format(greedyComponent), "(.+)"):gsub("(%%%d?$?[^()])", "(.-)") .. "$"
+		return function(text) return permuteFn(text:match(match_pattern)) end
+	end
+
 	MatchObject = GetMatcher(QUEST_OBJECTS_FOUND)
 	MatchMonster = GetMatcher(QUEST_MONSTERS_KILLED)
 	MatchPlayer = GetMatcher(QUEST_PLAYERS_KILLED)
-	MatchFaction = GetMatcher(QUEST_FACTION_NEEDED)
+	MatchFaction = GetMatcherNonGreedy(QUEST_FACTION_NEEDED, 1)
 
 	MatchErrObject = GetMatcher(ERR_QUEST_ADD_ITEM_SII)
 	MatchErrFound = GetMatcher(ERR_QUEST_ADD_FOUND_SII)
