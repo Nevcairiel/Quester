@@ -582,7 +582,7 @@ local function processObjective(questID, questTitle, isTask, objIndex, objDesc, 
 				end
 			end
 		elseif objType == "player" then
-			itemDesc, numItems, numNeeded = MatchPlayer(objDesc)
+			numItems, numNeeded, itemDesc = MatchPlayer(objDesc)
 
 			-- it is unknown if some quests marked as "player" use the Monster syntax,
 			-- but attempt to parse if it failed above
