@@ -330,7 +330,7 @@ local function PlayQuestSound(index)
 	PlaySoundFile(sounds[soundSet][index])
 end
 
-local first, blockQuestUpdate = true, nil
+local first, blockQuestUpdate = true, true
 function Quester:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("QuesterDB", defaults, true)
 	db = self.db.profile
@@ -395,7 +395,6 @@ function Quester:OnEnable()
 
 	self:EnvironmentProxy()
 	self:SetupChatFilter()
-	self:QUEST_LOG_UPDATE()
 
 	if QuestFrameRewardPanel:IsVisible() then
 		self:QUEST_COMPLETE()
