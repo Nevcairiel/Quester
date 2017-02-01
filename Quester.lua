@@ -710,7 +710,15 @@ local function ProcessGossip(index, skip, ...)
 	for i = 2, numQuests, skip do
 		local button = _G["GossipTitleButton"..index]
 		local text, col = button:GetText(), nil
-		if text:match("^|c(.*)%[") then col, text = text:match("^|c(.*)%[[^%]]+%]%s?(.*)") end
+		if text:match("^|c(.*)%[") then
+			local col, t = text:match("^|c(.*)%[[^%]]+%]|r%s?(.*)")
+			if not t then
+				col, t = text:match("^|c(.*)%[[^%]]+%]%s?(.*)")
+			end
+			if t then
+				text = t
+			end
+		end
 		local level = select(i, ...) or 0
 		if level == -1 then
 			-- keep the text untouched
