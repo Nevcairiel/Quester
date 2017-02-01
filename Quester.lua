@@ -10,6 +10,8 @@ local defaults = {
 		highlightReward = true,
 		trackerMovable = false,
 		showObjectivePercentages = true,
+		hide01 = true,
+		shortenNumbers = false,
 
 		-- coloring
 		gossipColor = true,
@@ -222,6 +224,21 @@ local function getOptionsTable()
 				type = "toggle",
 				arg = "showObjectivePercentages",
 				order = 4.5,
+				width = "full",
+			},
+			hide01 = {
+				name = L["Remove numbers from single task objectives"],
+				type = "toggle",
+				arg = "hide01",
+				order = 4.6,
+				width = "full",
+			},
+			shortenNumbers = {
+				name = L["Only show number of objective items remaining"],
+				desc = L["Instead of 2/8, show 6"],
+				type = "toggle",
+				arg = "shortenNumbers",
+				order = 4.6,
 				width = "full",
 			},
 			colorheader = {
@@ -903,8 +920,19 @@ function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, l
 		end
 	else
 		if progress[text] then
+			local newText
+			if db.shortenNumbers or db.hide01 then
+				newText = text:gsub("^(%d+)/(%d+) ", function(cur, total)
+					if db.hide01 and total == "1" then
+						return ""
+					end
+					if db.shortenNumbers then
+						return tostring(total-cur).." "
+					end
+				end)
+			end
 			local line = obj:GetLine(block, objectiveKey, lineType)
-			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), text))
+			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
 		end
 	end
 end
