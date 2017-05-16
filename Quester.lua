@@ -735,6 +735,11 @@ local function ProcessGossip(index, skip, ...)
 			if t then
 				text = t
 			end
+		elseif text:match("^%[") then
+			local t = text:match("^%[[^%]]+%]%s?(.*)")
+			if t then
+				text = t
+			end
 		end
 		local level = select(i, ...) or 0
 		if level == -1 then
