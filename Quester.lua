@@ -12,6 +12,7 @@ local defaults = {
 		showObjectivePercentages = true,
 		hide01 = true,
 		shortenNumbers = false,
+		showTagIcons = false,
 
 		-- coloring
 		gossipColor = true,
@@ -150,6 +151,37 @@ local function GetChatTaggedTitle(i)
 	return format("(%s%s) %s", level, GetQuestTag(groupSize, frequency), title)
 end
 
+local function GetQuestTagTexCoords(i)
+	if not i or i == 0 then return nil end
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(i)
+
+	local tagID
+	local questTagID, tagName = GetQuestTagInfo(questID)
+	if questTagID and questTagID == QUEST_TAG_ACCOUNT then
+		local factionGroup = GetQuestFactionGroup(questID)
+		if factionGroup then
+			tagID = "ALLIANCE"
+			if factionGroup == LE_QUEST_FACTION_HORDE then
+				tagID = "HORDE"
+			end
+		else
+			tagID = QUEST_TAG_ACCOUNT
+		end
+	elseif frequency == LE_QUEST_FREQUENCY_DAILY and (not isComplete or isComplete == 0) then
+		tagID = "DAILY"
+	elseif frequency == LE_QUEST_FREQUENCY_WEEKLY and (not isComplete or isComplete == 0)then
+		tagID = "WEEKLY"
+	elseif questTagID then
+		tagID = questTagID
+	end
+
+	if tagID and QUEST_TAG_TCOORDS[tagID] then
+		return QUEST_TAG_TCOORDS[tagID]
+	end
+
+	return nil
+end
+
 -- faction data for reputation quests
 local factionLabels = {}
 do
@@ -239,6 +271,14 @@ local function getOptionsTable()
 				type = "toggle",
 				arg = "shortenNumbers",
 				order = 4.6,
+				width = "full",
+			},
+			showTagIcons = {
+				name = L["Show Quest Tag Icons in the Objective Tracker"],
+				desc = L["Allows easy identification of daily/weekly quests, as well as raid and dungeon quests."],
+				type = "toggle",
+				arg = "showTagIcons",
+				order = 4.7,
 				width = "full",
 			},
 			colorheader = {
@@ -880,11 +920,29 @@ end
 
 function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 	local block = HeaderText:GetParent()
+	if HeaderText.__QuesterTagIcon then
+		HeaderText.__QuesterTagIcon:Hide()
+	end
 	if block.__QuesterQuestTracker and block.id then
 		local questLogIndex = GetQuestLogIndexByID(block.id)
 		if questLogIndex then
 			text = GetTaggedTitle(questLogIndex, db.questTrackerColor, true)
 			HeaderText:__QuesterSetText(text)
+
+			if db.showTagIcons then
+				local tag = GetQuestTagTexCoords(questLogIndex)
+				if tag then
+					if not HeaderText.__QuesterTagIcon then
+						HeaderText.__QuesterTagIcon = block:CreateTexture(nil, "ARTWORK")
+						HeaderText.__QuesterTagIcon:SetSize(18, 18)
+						HeaderText.__QuesterTagIcon:SetTexture("Interface\\QuestFrame\\QuestTypeIcons")
+						HeaderText.__QuesterTagIcon:SetPoint("TOP", HeaderText, "TOP", 0, 3)
+						HeaderText.__QuesterTagIcon:SetPoint("LEFT", HeaderText, "RIGHT", -2, 0)
+					end
+					HeaderText.__QuesterTagIcon:SetTexCoord(unpack(tag))
+					HeaderText.__QuesterTagIcon:Show()
+				end
+			end
 		end
 	end
 end
