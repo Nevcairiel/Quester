@@ -941,6 +941,7 @@ function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 					end
 					HeaderText.__QuesterTagIcon:SetTexCoord(unpack(tag))
 					HeaderText.__QuesterTagIcon:Show()
+					HeaderText:SetWidth((block.lineWidth or OBJECTIVE_TRACKER_TEXT_WIDTH) - 6)
 				end
 			end
 		end
