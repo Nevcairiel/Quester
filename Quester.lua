@@ -127,25 +127,25 @@ end
 
 local function GetTaggedTitle(i, color, tag)
 	if not i or i == 0 then return nil end
-	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(i)
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(i)
 	if not isHeader and title then
 		local tagString = tag and GetQuestTag(groupSize, frequency, GetQuestTagInfo(questID)) or ""
 		if color then
 			if db.questLevels then
-				title = format("|cff%s[%s%s] %s|r", rgb2hex(GetQuestDifficultyColor(level)), level, tagString, title)
+				title = format("|cff%s[%s%s] %s|r", rgb2hex(GetQuestDifficultyColor(level, isScaling)), level, tagString, title)
 			else
-				title = format("|cff%s%s|r", rgb2hex(GetQuestDifficultyColor(level)), title)
+				title = format("|cff%s%s|r", rgb2hex(GetQuestDifficultyColor(level, isScaling)), title)
 			end
 		elseif db.questLevels then
 			title = format("[%s%s] %s", level, tagString, title)
 		end
 	end
-	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory
+	return title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling
 end
 
 local function GetChatTaggedTitle(i)
 	if not i or i == 0 then return nil end
-	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory = GetQuestLogTitle(i)
+	local title, level, groupSize, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isBounty, isStory, isHidden, isScaling = GetQuestLogTitle(i)
 	if isHeader or not title then return end
 	return format("(%s%s) %s", level, GetQuestTag(groupSize, frequency), title)
 end
