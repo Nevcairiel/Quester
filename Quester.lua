@@ -1,6 +1,8 @@
 local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
+local WoW80 = select(4, GetBuildInfo()) >= 80000
+
 local db, taintWarned
 local defaults = {
 	profile = {
@@ -446,7 +448,9 @@ function Quester:OnEnable()
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
-	self:SecureHook("QuestLogQuests_Update")
+	if not WoW80 then
+		self:SecureHook("QuestLogQuests_Update")
+	end
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
