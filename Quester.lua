@@ -7,7 +7,7 @@ local db, taintWarned
 local defaults = {
 	profile = {
 		-- options
-		questLevels = true,
+		questLevels = not WoW80,
 		removeComplete = true,
 		highlightReward = true,
 		trackerMovable = false,
