@@ -978,7 +978,7 @@ function Quester:QuestTrackerOnFreeBlock(mod, block)
 end
 
 function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
-	if obj.ShowWorldQuests and colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
+	if colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
 		if db.questTrackerColor then
 			text = select(4, GetTaskInfo(block.id))
 			if text then
