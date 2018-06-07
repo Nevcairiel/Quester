@@ -52,14 +52,18 @@ do
 
 	local function GetMatcher(pattern)
 		local permuteFn = loadstring(GetPermute3(pattern))()
+		local pattern_opt = OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format(pattern)
 		local match_pattern = "^" .. pattern:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub("(%%%d?$?[^()])", "(.+)") .. "$"
-		return function(text) return permuteFn(text:match(match_pattern)) end
+		local match_pattern_opt = "^" .. pattern_opt:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub("(%%%d?$?[^()])", "(.+)") .. "$"
+		return function(text) local a,b,c = permuteFn(text:match(match_pattern_opt)) if not a then a,b,c = permuteFn(text:match(match_pattern)) end return a,b,c end
 	end
 
 	local function GetMatcherNonGreedy(pattern, greedyComponent)
 		local permuteFn = loadstring(GetPermute3(pattern))()
+		local pattern_opt = OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format(pattern)
 		local match_pattern = "^" .. pattern:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub(("(%%%%%d$[^()])"):format(greedyComponent), "(.+)"):gsub("(%%%d?$?[^()])", "(.-)") .. "$"
-		return function(text) return permuteFn(text:match(match_pattern)) end
+		local match_pattern_opt = "^" .. pattern_opt:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub(("(%%%%%d$[^()])"):format(greedyComponent), "(.+)"):gsub("(%%%d?$?[^()])", "(.-)") .. "$"
+		return function(text) local a,b,c = permuteFn(text:match(match_pattern_opt)) if not a then a,b,c = permuteFn(text:match(match_pattern)) end return a,b,c end
 	end
 
 	MatchObject = GetMatcher(QUEST_OBJECTS_FOUND)
@@ -977,6 +981,25 @@ function Quester:QuestTrackerOnFreeBlock(mod, block)
 	block.__QuesterQuestTracker = nil
 end
 
+local function shorten_numbers(cur, total)
+	if db.hide01 and total == "1" then
+		return ""
+	end
+	if db.shortenNumbers then
+		return tostring(total-cur).." "
+	end
+end
+
+local function shorten_numbers_opt(opt, cur, total)
+	local s = shorten_numbers(cur, total)
+	if s then
+		return ("%s %s"):format(opt, s)
+	end
+end
+
+local objective_count = "^(%d+)/(%d+) "
+local objective_count_opt = "^" .. OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format("QuesterPattern"):gsub("%(", "%(%%("):gsub("%)", "%%)%)"):gsub("QuesterPattern", "(%%d+)/(%%d+) ")
+
 function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
 	if colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
 		if db.questTrackerColor then
@@ -990,14 +1013,7 @@ function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, l
 		if progress[text] then
 			local newText
 			if db.shortenNumbers or db.hide01 then
-				newText = text:gsub("^(%d+)/(%d+) ", function(cur, total)
-					if db.hide01 and total == "1" then
-						return ""
-					end
-					if db.shortenNumbers then
-						return tostring(total-cur).." "
-					end
-				end)
+				newText = text:gsub(objective_count, shorten_numbers):gsub(objective_count_opt, shorten_numbers_opt)
 			end
 			local line = obj:GetLine(block, objectiveKey, lineType)
 			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
