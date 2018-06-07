@@ -179,6 +179,9 @@ local function GetQuestTagTexCoords(i)
 		tagID = "WEEKLY"
 	elseif questTagID then
 		tagID = questTagID
+	elseif C_CampaignInfo.IsCampaignQuest(questID) then
+		local faction = UnitFactionGroup("player")
+		tagID = faction == "Horde" and "HORDE" or "ALLIANCE"
 	end
 
 	if tagID and QUEST_TAG_TCOORDS[tagID] then
