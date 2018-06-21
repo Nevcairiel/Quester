@@ -968,15 +968,6 @@ function Quester:QuestTrackerGetBlock(mod, questID)
 			block.__QuesterHooked = true
 		end
 		block.__QuesterQuestTracker = true
-
-		-- taint check
-		local isSecure, addon = issecurevariable(block, "id")
-		if not isSecure and not taintWarned then
-			if not IsAddOnLoaded("!QuestItemButtonFix") then
-				self:Print("Quest Tracker tainted by " .. tostring(addon))
-			end
-			taintWarned = true
-		end
 	end
 end
 
