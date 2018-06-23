@@ -453,6 +453,7 @@ function Quester:OnEnable()
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
+	self:SecureHook("QuestLogQuests_Update")
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
@@ -879,8 +880,7 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 end
 
 function Quester:QuestLogQuests_Update()
-	for i = 1, #QuestMapFrame.QuestsFrame.Contents.Titles do
-		local button = QuestMapFrame.QuestsFrame.Contents.Titles[i]
+	for button in QuestScrollFrame.titleFramePool:EnumerateActive() do
 		if button and button:IsShown() then
 			local text = GetTaggedTitle(button.questLogIndex, false, false)
 
@@ -912,6 +912,7 @@ function Quester:QuestLogQuests_Update()
 			button:SetHeight(totalHeight)
 		end
 	end
+	QuestScrollFrame.Contents:Layout()
 end
 
 function Quester:UpdateObjectiveTracker(tracker)
