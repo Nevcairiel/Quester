@@ -116,15 +116,15 @@ local function GetQuestTag(groupSize, frequency, tagId, tagName)
 	if frequency == LE_QUEST_FREQUENCY_DAILY or frequency == LE_QUEST_FREQUENCY_WEEKLY then
 		tag = tags.DAILY
 	end
-	if tagId == QUEST_TAG_GROUP then
+	if tagId == Enum.QuestTag.Group then
 		tag = tag .. tags.GROUP
-	elseif tagId == QUEST_TAG_SCENARIO then
+	elseif tagId == Enum.QuestTag.Scenario then
 		tag = tag .. tags.SCENARIO
-	elseif tagId == QUEST_TAG_DUNGEON then
+	elseif tagId == Enum.QuestTag.Dungeon then
 		tag = tag .. tags.DUNGEON
-	elseif tagId == QUEST_TAG_HEROIC then
+	elseif tagId == Enum.QuestTag.Heroic then
 		tag = tag .. tags.HEROIC_DUNGEON
-	elseif tagId == QUEST_TAG_RAID or tagId == QUEST_TAG_RAID10 or tagId == QUEST_TAG_RAID25 then
+	elseif QUEST_TAG_DUNGEON_TYPES[tagId] then
 		tag = tag .. tags.RAID
 	end
 	return tag
@@ -161,7 +161,7 @@ local function GetQuestTagTexCoords(i)
 
 	local tagID
 	local questTagID, tagName = GetQuestTagInfo(questID)
-	if questTagID and questTagID == QUEST_TAG_ACCOUNT then
+	if questTagID and questTagID == Enum.QuestTag.Account then
 		local factionGroup = GetQuestFactionGroup(questID)
 		if factionGroup then
 			tagID = "ALLIANCE"
@@ -169,7 +169,7 @@ local function GetQuestTagTexCoords(i)
 				tagID = "HORDE"
 			end
 		else
-			tagID = QUEST_TAG_ACCOUNT
+			tagID = questTagID
 		end
 	elseif frequency == LE_QUEST_FREQUENCY_DAILY and (not isComplete or isComplete == 0) then
 		tagID = "DAILY"
