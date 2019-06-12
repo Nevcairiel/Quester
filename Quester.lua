@@ -378,20 +378,26 @@ end
 local QUESTER_SOUND_MORE_WORK = 1
 local QUESTER_SOUND_JOBS_DONE = 2
 
+-- Sounds used. SoundKit IDs where available, file paths otherwise
 local sounds = {
 	[1] = {
-		"Sound\\Creature\\Peasant\\PeasantWhat3.ogg",
+		6288, -- "Sound\\Creature\\Peasant\\PeasantWhat3.ogg"
 		"Interface\\AddOns\\Quester\\sounds\\jobsdone.ogg"
 	},
 	[2] = {
-		"Sound\\Creature\\Peon\\PeonYes3.ogg",
-		"Sound\\Creature\\Peon\\PeonBuildingComplete1.ogg"
+		6197, -- "Sound\\Creature\\Peon\\PeonYes3.ogg"
+		6199, -- "Sound\\Creature\\Peon\\PeonBuildingComplete1.ogg"
 	}
 }
 local function PlayQuestSound(index)
 	local soundSet = db.soundSet
 	if soundSet ~= 1 and soundSet ~= 2 then soundSet = 1 end
-	PlaySoundFile(sounds[soundSet][index])
+	local sound = sounds[soundSet][index]
+	if type(sound) == "string" then
+		PlaySoundFile(sound)
+	elseif type(sound) == "number" then
+		PlaySound(sound)
+	end
 end
 
 local first, blockQuestUpdate = true, true
