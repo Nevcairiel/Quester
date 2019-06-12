@@ -6,6 +6,7 @@
 ## Version: @project-version@
 ## X-Credits: SmoothQuest by Ammo
 ## X-Website: http://www.wowace.com/addons/quester/
+## X-Curse-Project-ID: 84833
 
 ## OptionalDeps: Ace3, LibSink-2.0
 
