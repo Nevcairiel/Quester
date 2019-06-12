@@ -779,7 +779,7 @@ local function ProcessGossip(index, skip, ...)
 	local numQuests = select("#", ...)
 	for i = 2, numQuests, skip do
 		local button = _G["GossipTitleButton"..index]
-		local text, col = button:GetText(), nil
+		local text = button:GetText()
 		if text:match("^|c(.*)%[") then
 			local col, t = text:match("^|c(.*)%[[^%]]+%]|r%s?(.*)")
 			if not t then
@@ -922,7 +922,7 @@ function Quester:QuestLogQuests_Update()
 end
 
 function Quester:UpdateObjectiveTracker(tracker)
-	for id, block in pairs(tracker.usedBlocks) do
+	for _id, block in pairs(tracker.usedBlocks) do
 		if block.used then
 			for key, line in pairs(block.lines) do
 				self:ObjectiveTracker_AddObjective(tracker, block, key, line.Text:GetText(), line.type)
@@ -1041,7 +1041,7 @@ function Quester:SetupChatFilter()
 	local function process(full, level, partial)
 		return full:gsub(partial, quests[partial] and GetChatTaggedTitle(GetQuestLogIndexByID(quests[partial])) or "("..level..") "..partial)
 	end
-	local function filter(self, event, msg, ...)
+	local function filter(frame, event, msg, ...)
 		if msg then
 			if db.questLevels then
 				msg = msg:gsub("(|c%x+|Hquest:%d+:(%d+)|h%[([^|]*)%]|h|r)", process)
@@ -1057,7 +1057,7 @@ end
 function Quester:SetRewardHighlight(reward)
 	if not self.rewardHighlightFrame then
 		self.rewardHighlightFrame = CreateFrame("Frame", "QuesterRewardHighlight", QuestInfoRewardsFrame, "AutoCastShineTemplate")
-		self.rewardHighlightFrame:SetScript("OnHide", function(self) AutoCastShine_AutoCastStop(self) end)
+		self.rewardHighlightFrame:SetScript("OnHide", function(frame) AutoCastShine_AutoCastStop(frame) end)
 	end
 	self.rewardHighlightFrame:ClearAllPoints()
 	self.rewardHighlightFrame:SetAllPoints(reward)
