@@ -822,15 +822,14 @@ end
 function Quester:QUEST_GREETING()
 	if not QuestFrameGreetingPanel:IsVisible() or not db.questLevels then return end
 
-	local active, available = GetNumActiveQuests(), GetNumAvailableQuests()
-	local title, level, button
-	local o, GetTitle, GetLevel = 0,  GetActiveTitle, GetActiveLevel
-	for i=1, active + available do
-		if i == active + 1 then
-			o,GetTitle,GetLevel = active, GetAvailableTitle, GetAvailableLevel
+	-- Enumerate over all available buttons, and modify them
+	for button in QuestFrameGreetingPanel.titleButtonPool:EnumerateActive() do
+		local title, level
+		if button.isActive == 1 then
+			title, level = GetActiveTitle(button:GetID()), GetActiveLevel(button:GetID())
+		else
+			title, level = GetAvailableTitle(button:GetID()), GetAvailableLevel(button:GetID())
 		end
-		title, level = GetTitle(i-o), GetLevel(i-o)
-		button = _G["QuestTitleButton"..i]
 		if level == -1 then
 			-- keep the text untouched
 		elseif db.gossipColor then
