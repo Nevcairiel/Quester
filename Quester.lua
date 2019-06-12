@@ -391,7 +391,7 @@ local sounds = {
 }
 local function PlayQuestSound(index)
 	local soundSet = db.soundSet
-	if soundSet ~= 1 and soundSet ~= 2 then soundSet = 1 end
+	if not soundSet or not sounds[soundSet] then soundSet = 1 end
 	local sound = sounds[soundSet][index]
 	if type(sound) == "string" then
 		PlaySoundFile(sound)
