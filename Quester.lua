@@ -772,21 +772,24 @@ function Quester:QUEST_GREETING()
 	if not QuestFrameGreetingPanel:IsVisible() or not db.questLevels then return end
 
 	-- Enumerate over all available buttons, and modify them
-	for button in QuestFrameGreetingPanel.titleButtonPool:EnumerateActive() do
+	local numActiveQuests = GetNumActiveQuests()
+	local numAvailableQuests = GetNumAvailableQuests()
+	for i = 1, numActiveQuests + numAvailableQuests do
+		local questTitleButton = _G["QuestTitleButton"..i]
 		local title, level
-		if button.isActive == 1 then
-			title, level = GetActiveTitle(button:GetID()), GetActiveLevel(button:GetID())
+		if i <= numActiveQuests then
+			title, level = GetActiveTitle(i), GetActiveLevel(i)
 		else
-			title, level = GetAvailableTitle(button:GetID()), GetAvailableLevel(button:GetID())
+			title, level = GetAvailableTitle(i - numActiveQuests), GetAvailableLevel(i - numActiveQuests)
 		end
 		if level == -1 then
 			-- keep the text untouched
 		elseif db.gossipColor then
-			button:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
+			questTitleButton:SetText(format("|cff%s[%d]|r %s", rgb2hex(GetQuestDifficultyColor(level)), level, title))
 		else
-			button:SetText(format("[%d] %s", level, title))
+			questTitleButton:SetText(format("[%d] %s", level, title))
 		end
-		button:SetHeight(button:GetTextHeight() + 2)
+		questTitleButton:SetHeight(questTitleButton:GetTextHeight() + 2)
 	end
 end
 
