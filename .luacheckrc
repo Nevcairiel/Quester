@@ -17,7 +17,7 @@ ignore = {
 }
 
 globals = {
-
+	"QuestWatchFrame",
 }
 
 read_globals = {
@@ -27,6 +27,7 @@ read_globals = {
 	"wipe",
 
 	-- Third Party Addon/Libraries
+	"ClassicQuestLog",
 	"LibStub",
 
 	-- API functions
@@ -85,6 +86,8 @@ read_globals = {
 	"ChatFrame_AddMessageEventFilter",
 	"GossipResize",
 	"InterfaceOptionsFrame_OpenToCategory",
+	"QuestLog_Update",
+	"QuestWatch_Update",
 	"UIParent_ManageFramePositions",
 	"WorldMapQuestPOI_AppendTooltip",
 	"WorldMapQuestPOI_SetTooltip",

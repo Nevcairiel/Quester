@@ -5,11 +5,10 @@ local db
 local defaults = {
 	profile = {
 		-- options
-		questLevels = false,
+		questLevels = true,
 		removeComplete = true,
 		highlightReward = true,
 		trackerMovable = false,
-		showObjectivePercentages = true,
 		hide01 = true,
 		shortenNumbers = false,
 		showTagIcons = false,
@@ -50,18 +49,14 @@ do
 
 	local function GetMatcher(pattern)
 		local permuteFn = loadstring(GetPermute3(pattern))()
-		local pattern_opt = OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format(pattern)
 		local match_pattern = "^" .. pattern:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub("(%%%d?$?[^()])", "(.+)") .. "$"
-		local match_pattern_opt = "^" .. pattern_opt:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub("(%%%d?$?[^()])", "(.+)") .. "$"
-		return function(text) local a,b,c = permuteFn(text:match(match_pattern_opt)) if not a then a,b,c = permuteFn(text:match(match_pattern)) end return a,b,c end
+		return function(text) return permuteFn(text:match(match_pattern)) end
 	end
 
 	local function GetMatcherNonGreedy(pattern, greedyComponent)
 		local permuteFn = loadstring(GetPermute3(pattern))()
-		local pattern_opt = OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format(pattern)
 		local match_pattern = "^" .. pattern:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub(("(%%%%%d$[^()])"):format(greedyComponent), "(.+)"):gsub("(%%%d?$?[^()])", "(.-)") .. "$"
-		local match_pattern_opt = "^" .. pattern_opt:gsub("%(","%%("):gsub("%)", "%%)"):gsub("(%%%d?$?d)", "(.-)"):gsub(("(%%%%%d$[^()])"):format(greedyComponent), "(.+)"):gsub("(%%%d?$?[^()])", "(.-)") .. "$"
-		return function(text) local a,b,c = permuteFn(text:match(match_pattern_opt)) if not a then a,b,c = permuteFn(text:match(match_pattern)) end return a,b,c end
+		return function(text) return permuteFn(text:match(match_pattern)) end
 	end
 
 	MatchObject = GetMatcher(QUEST_OBJECTS_FOUND)
@@ -226,7 +221,7 @@ local function getOptionsTable()
 				desc = L["Reset the position of the Objective Tracker to the default."],
 				type = "execute",
 				order = 0.5,
-				func = function() db.pos.x = nil; db.pos.y = nil; UIParent_ManageFramePositions() end,
+				func = function() db.pos.x = nil; db.pos.y = nil; QuestWatchFrame:ClearAllPoints(); UIParent_ManageFramePositions() end,
 			},
 			behaviorheader = {
 				type = "header",
@@ -257,14 +252,6 @@ local function getOptionsTable()
 				order = 4,
 				width = "full",
 			},
-			showObjectivePercentages = {
-				name = L["Always show objective percentage values on progress bars"],
-				desc = L["Toggling this option may require a UI reload to fully take effect."],
-				type = "toggle",
-				arg = "showObjectivePercentages",
-				order = 4.5,
-				width = "full",
-			},
 			hide01 = {
 				name = L["Remove numbers from single task objectives"],
 				type = "toggle",
@@ -287,6 +274,7 @@ local function getOptionsTable()
 				arg = "showTagIcons",
 				order = 4.7,
 				width = "full",
+				hidden = true,
 			},
 			colorheader = {
 				type = "header",
@@ -413,7 +401,7 @@ function Quester:OnInitialize()
 	self:RegisterChatCommand("quester", function() InterfaceOptionsFrame_OpenToCategory(optFrame) end)
 
 	self:RestoreTrackerPosition()
-	hooksecurefunc("UpdateContainerFrameAnchors", function() Quester:RestoreTrackerPosition() end)
+	hooksecurefunc("UIParent_ManageFramePositions", function() Quester:RestoreTrackerPosition() end)
 
 	self.eventFrame = CreateFrame("Frame", "QuesterEventFrame")
 	self.eventFrame:SetScript("OnEvent", function(frame, event, ...) Quester:HandleEvent(event, ...) end)
@@ -421,9 +409,8 @@ end
 
 function Quester:RestoreTrackerPosition()
 	if db.pos.x and db.pos.y then
-		ObjectiveTrackerFrame:ClearAllPoints()
-		ObjectiveTrackerFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.pos.x, db.pos.y)
-		ObjectiveTrackerFrame:SetPoint("BOTTOM", UIParent, "BOTTOM")
+		QuestWatchFrame:ClearAllPoints()
+		QuestWatchFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.pos.x, db.pos.y)
 	end
 end
 
@@ -451,15 +438,6 @@ function Quester:OnEnable()
 
 	self:HookScript(GameTooltip, "OnTooltipSetItem")
 	self:HookScript(GameTooltip, "OnTooltipSetUnit")
-	self:SecureHook(QUEST_TRACKER_MODULE, "GetBlock", "QuestTrackerGetBlock")
-	self:SecureHook(QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
-	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
-	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
-	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
-	self:SecureHook("QuestLogQuests_Update")
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
@@ -479,53 +457,40 @@ function Quester:OnDisable()
 	self.eventFrame:UnregisterAllEvents()
 end
 
-local function MakeBlockMovable(block, flag)
-	block:EnableMouse(flag)
+function Quester:ToggleTrackerMovable()
+	if db.trackerMovable then
+		QuestWatchFrame:SetMovable(true)
+		QuestWatchFrame:SetClampedToScreen(true)
+		QuestWatchFrame:SetClampRectInsets(-26, 0, 0, QuestWatchFrame:GetHeight() - 26)
 
-	if flag then
-		if not block.QuesterMoveLock then
-			block:SetScript("OnMouseDown", function() ObjectiveTrackerFrame:StartMoving() end)
-			block:SetScript("OnMouseUp",
+		if not QuestWatchFrame.QuesterMoveLock then
+			QuestWatchFrame:SetScript("OnMouseDown", function() QuestWatchFrame:StartMoving() end)
+			QuestWatchFrame:SetScript("OnMouseUp",
 				function()
-					ObjectiveTrackerFrame:StopMovingOrSizing()
-					db.pos.x = ObjectiveTrackerFrame:GetLeft()
-					db.pos.y = ObjectiveTrackerFrame:GetTop()
+					QuestWatchFrame:StopMovingOrSizing()
+					db.pos.x = QuestWatchFrame:GetLeft()
+					db.pos.y = QuestWatchFrame:GetTop()
 				end
 			)
-			local LockFrame = CreateFrame("Button", nil, block)
+			local LockFrame = CreateFrame("Button", nil, QuestWatchFrame)
 			LockFrame.lock = LockFrame:CreateTexture()
 			LockFrame.lock:SetAllPoints(LockFrame)
 			LockFrame.lock:SetTexture("Interface\\GuildFrame\\GuildFrame")
 			LockFrame.lock:SetTexCoord(0.51660156, 0.53320313, 0.92578125, 0.96679688)
 			LockFrame:SetSize(15, 18)
 			LockFrame:SetPoint("TOPRIGHT", -16, -2)
-			LockFrame:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT") GameTooltip:SetText(L["Lock the Objective Tracker in place"], 1, .82, 0, 1) GameTooltip:AddLine(L["You can unlock it again in the options"], 1, 1, 1, 1) GameTooltip:Show() end)
+			LockFrame:SetScript("OnEnter", function(f) GameTooltip:SetOwner(f, "ANCHOR_BOTTOMLEFT") GameTooltip:SetText(L["Lock the Objective Tracker in place"], 1, .82, 0, 1) GameTooltip:AddLine(L["You can unlock it again in the options"], 1, 1, 1, 1) GameTooltip:Show() end)
 			LockFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
 			LockFrame:SetScript("OnClick", function() db.trackerMovable = false; Quester:ToggleTrackerMovable() end)
 
-			block.QuesterMoveLock = LockFrame
+			QuestWatchFrame.QuesterMoveLock = LockFrame
 		end
-		block.QuesterMoveLock:Show()
+		QuestWatchFrame.QuesterMoveLock:Show()
 	else
-		if block.QuesterMoveLock then
-			block.QuesterMoveLock:Hide()
+		QuestWatchFrame:SetMovable(false)
+		if QuestWatchFrame.QuesterMoveLock then
+			QuestWatchFrame.QuesterMoveLock:Hide()
 		end
-	end
-end
-
-function Quester:ToggleTrackerMovable()
-	if db.trackerMovable then
-		ObjectiveTrackerFrame:SetMovable(true)
-		ObjectiveTrackerFrame:SetClampedToScreen(true)
-		ObjectiveTrackerFrame:SetClampRectInsets(-26, 0, 0, ObjectiveTrackerFrame:GetHeight() - 26)
-		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.QuestHeader, true)
-		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.AchievementHeader, true)
-		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.ScenarioHeader, true)
-	else
-		ObjectiveTrackerFrame:SetMovable(false)
-		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.QuestHeader, false)
-		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.AchievementHeader, false)
-		MakeBlockMovable(ObjectiveTrackerFrame.BlocksFrame.ScenarioHeader, false)
 	end
 end
 
@@ -750,24 +715,6 @@ function Quester:QUEST_LOG_UPDATE()
 	-- restore previous questlog selection
 	SelectQuestLogEntry(startingQuestLogSelection)
 
-	-- process watched world quests
-	for i = 1, GetNumWorldQuestWatches() do
-		local watchedWorldQuestID = GetWorldQuestWatchInfo(i)
-		local isInArea, isOnMap, numObjectives, taskName, displayAsObjective = GetTaskInfo(watchedWorldQuestID)
-
-		if taskName then
-			quests[taskName] = watchedWorldQuestID
-			for o = 1, numObjectives do
-				processObjective(watchedWorldQuestID, taskName, true, o, GetQuestObjectiveInfo(watchedWorldQuestID, o, false))
-			end
-		end
-	end
-
-	-- update the objective tracker
-	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE)
-	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE)
-	self:UpdateObjectiveTracker(WORLD_QUEST_TRACKER_MODULE)
-
 	-- update any open dialogs
 	self:QUEST_GREETING()
 	self:GOSSIP_SHOW()
@@ -884,98 +831,6 @@ function Quester:OnTooltipSetItem(tooltip, ...)
 	end
 end
 
-function Quester:QuestLogQuests_Update()
-	for button in QuestScrollFrame.titleFramePool:EnumerateActive() do
-		if button and button:IsShown() then
-			local text = GetTaggedTitle(button.questLogIndex, false, false)
-
-			local partyMembersOnQuest = 0
-			for j=1, GetNumSubgroupMembers() do
-				if IsUnitOnQuestByQuestID(button.questID, "party"..j) then
-					partyMembersOnQuest = partyMembersOnQuest + 1
-				end
-			end
-
-			if partyMembersOnQuest > 0 then
-				text = "["..partyMembersOnQuest.."] "..text
-			end
-
-			-- store previous text height, so we can compute the new total height
-			local prevTextHeight = button.Text:GetHeight()
-
-			-- update text
-			button.Text:SetText(text)
-
-			-- re-anchor check mark
-			if button.Check:IsShown() then
-				button.Check:SetPoint("LEFT", button.Text, button.Text:GetWrappedWidth() + 2, 0)
-			end
-
-			-- compute new button height, in case text wrapping changed
-			local totalHeight = button:GetHeight()
-			totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
-			button:SetHeight(totalHeight)
-		end
-	end
-	QuestScrollFrame.Contents:Layout()
-end
-
-function Quester:UpdateObjectiveTracker(tracker)
-	for _id, block in pairs(tracker.usedBlocks) do
-		if block.used then
-			for key, line in pairs(block.lines) do
-				self:ObjectiveTracker_AddObjective(tracker, block, key, line.Text:GetText(), line.type)
-			end
-		end
-	end
-end
-
-function Quester:QuestTrackerHeaderSetText(HeaderText, text)
-	local block = HeaderText:GetParent()
-	if HeaderText.__QuesterTagIcon then
-		HeaderText.__QuesterTagIcon:Hide()
-	end
-	if block.__QuesterQuestTracker and block.id then
-		local questLogIndex = GetQuestLogIndexByID(block.id)
-		if questLogIndex then
-			text = GetTaggedTitle(questLogIndex, db.questTrackerColor, true)
-			HeaderText:__QuesterSetText(text)
-
-			if db.showTagIcons then
-				local tag = GetQuestTagTexCoords(questLogIndex)
-				if tag then
-					if not HeaderText.__QuesterTagIcon then
-						HeaderText.__QuesterTagIcon = block:CreateTexture(nil, "ARTWORK")
-						HeaderText.__QuesterTagIcon:SetSize(18, 18)
-						HeaderText.__QuesterTagIcon:SetTexture("Interface\\QuestFrame\\QuestTypeIcons")
-						HeaderText.__QuesterTagIcon:SetPoint("TOP", HeaderText, "TOP", 0, 3)
-						HeaderText.__QuesterTagIcon:SetPoint("LEFT", HeaderText, "RIGHT", -2, 0)
-					end
-					HeaderText.__QuesterTagIcon:SetTexCoord(unpack(tag))
-					HeaderText.__QuesterTagIcon:Show()
-					HeaderText:SetWidth((block.lineWidth or OBJECTIVE_TRACKER_TEXT_WIDTH) - 6)
-				end
-			end
-		end
-	end
-end
-
-function Quester:QuestTrackerGetBlock(mod, questID)
-	local block = mod.usedBlocks[questID]
-	if block then
-		if not block.__QuesterHooked then
-			block.HeaderText.__QuesterSetText = block.HeaderText.SetText
-			self:SecureHook(block.HeaderText, "SetText", "QuestTrackerHeaderSetText")
-			block.__QuesterHooked = true
-		end
-		block.__QuesterQuestTracker = true
-	end
-end
-
-function Quester:QuestTrackerOnFreeBlock(mod, block)
-	block.__QuesterQuestTracker = nil
-end
-
 local function shorten_numbers(cur, total)
 	if db.hide01 and total == "1" then
 		return ""
@@ -985,44 +840,7 @@ local function shorten_numbers(cur, total)
 	end
 end
 
-local function shorten_numbers_opt(opt, cur, total)
-	local s = shorten_numbers(cur, total)
-	if s then
-		return ("%s %s"):format(opt, s)
-	end
-end
-
 local objective_count = "^(%d+)/(%d+) "
-local objective_count_opt = "^" .. OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format("QuesterPattern"):gsub("%(", "%(%%("):gsub("%)", "%%)%)"):gsub("QuesterPattern", "(%%d+)/(%%d+) ")
-
-function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
-	if colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
-		if db.questTrackerColor then
-			text = select(4, GetTaskInfo(block.id))
-			if text then
-				local line = obj:GetLine(block, objectiveKey, lineType)
-				line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
-			end
-		end
-	else
-		if progress[text] then
-			local newText
-			if db.shortenNumbers or db.hide01 then
-				newText = text:gsub(objective_count, shorten_numbers):gsub(objective_count_opt, shorten_numbers_opt)
-			end
-			local line = obj:GetLine(block, objectiveKey, lineType)
-			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
-		end
-	end
-end
-
-function Quester:ObjectiveTracker_AddProgressBar(obj, block, line, questID)
-	if db.showObjectivePercentages then
-		line.ProgressBar.Bar:SetScript("OnEnter", nil)
-		line.ProgressBar.Bar:SetScript("OnLeave", nil)
-		line.ProgressBar.Bar.Label:Show()
-	end
-end
 
 function Quester:EnvironmentProxy()
 	local env = setmetatable({
@@ -1031,10 +849,35 @@ function Quester:EnvironmentProxy()
 		end,
 	}, {__index = _G})
 
-	-- quest log/map
-	pcall(setfenv, WorldMapQuestPOI_SetTooltip, env)
-	pcall(setfenv, WorldMapQuestPOI_AppendTooltip, env)
+	local env2 = setmetatable({
+		GetQuestLogTitle = function(index)
+			return GetTaggedTitle(index, db.questTrackerColor, true)
+		end,
+		GetQuestLogLeaderBoard = function(questIndex, objectiveIndex)
+			local text, type, finished = _G.GetQuestLogLeaderBoard(questIndex, objectiveIndex)
+			if progress[text] then
+				local newText
+				if db.shortenNumbers or db.hide01 then
+					newText = text:gsub(objective_count, shorten_numbers)
+				end
+				text = format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text)
+			end
+			return text, type, finished
+		end,
+	}, {__index = _G})
+
+	-- quest log
+	pcall(setfenv, QuestLog_Update, env)
+
+	-- quest watch
+	pcall(setfenv, QuestWatch_Update, env2)
+
+	-- support the ClassicQuestLog addon
+	if ClassicQuestLog and ClassicQuestLog.UpdateLog then
+		pcall(setfenv, ClassicQuestLog.UpdateLog, env)
+	end
 end
+
 
 function Quester:SetupChatFilter()
 	local function process(full, level, partial)
