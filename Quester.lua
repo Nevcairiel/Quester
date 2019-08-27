@@ -460,6 +460,7 @@ end
 function Quester:ToggleTrackerMovable()
 	if db.trackerMovable then
 		QuestWatchFrame:SetMovable(true)
+		QuestWatchFrame:EnableMouse(true)
 		QuestWatchFrame:SetClampedToScreen(true)
 		QuestWatchFrame:SetClampRectInsets(-26, 0, 0, QuestWatchFrame:GetHeight() - 26)
 
@@ -488,6 +489,7 @@ function Quester:ToggleTrackerMovable()
 		QuestWatchFrame.QuesterMoveLock:Show()
 	else
 		QuestWatchFrame:SetMovable(false)
+		QuestWatchFrame:EnableMouse(false)
 		if QuestWatchFrame.QuesterMoveLock then
 			QuestWatchFrame.QuesterMoveLock:Hide()
 		end
