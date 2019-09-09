@@ -413,7 +413,7 @@ function Quester:OnInitialize()
 	self:RegisterChatCommand("quester", function() InterfaceOptionsFrame_OpenToCategory(optFrame) end)
 
 	self:RestoreTrackerPosition()
-	hooksecurefunc("UpdateContainerFrameAnchors", function() Quester:RestoreTrackerPosition() end)
+	hooksecurefunc("UIParent_ManageFramePositions", function() Quester:RestoreTrackerPosition() end)
 
 	self.eventFrame = CreateFrame("Frame", "QuesterEventFrame")
 	self.eventFrame:SetScript("OnEvent", function(frame, event, ...) Quester:HandleEvent(event, ...) end)
