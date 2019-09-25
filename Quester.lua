@@ -812,10 +812,10 @@ function Quester:GOSSIP_SHOW()
 	if not GossipFrame:IsVisible() or not db.questLevels then return end
 	local buttonindex = 1
 	if GetGossipAvailableQuests() then
-		buttonindex = ProcessGossip(buttonindex, 7, GetGossipAvailableQuests())
+		buttonindex = ProcessGossip(buttonindex, 8, GetGossipAvailableQuests())
 	end
 	if GetGossipActiveQuests() then
-		buttonindex = ProcessGossip(buttonindex, 6, GetGossipActiveQuests())
+		buttonindex = ProcessGossip(buttonindex, 7, GetGossipActiveQuests())
 	end
 end
 
