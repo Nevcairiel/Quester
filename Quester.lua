@@ -984,8 +984,10 @@ function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 	end
 end
 
-function Quester:QuestTrackerGetBlock(mod, questID)
-	local block = mod.usedBlocks[questID]
+function Quester:QuestTrackerGetBlock(mod, questID, overrideType, overrideTemplate)
+	local blockTemplate = overrideTemplate or mod.blockTemplate
+	if not mod.usedBlocks[blockTemplate] then return end
+	local block = mod.usedBlocks[blockTemplate][questID]
 	if block then
 		if not block.__QuesterHooked then
 			block.HeaderText.__QuesterSetText = block.HeaderText.SetText
