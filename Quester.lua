@@ -810,7 +810,7 @@ local function ProcessGossip(button, data)
 	local text = data.info.title
 	local level = data.info.questLevel or -1
 	local tagString = GetQuestTag(data.info.suggestedGroup, data.info.frequency, C_QuestLog.GetQuestTagInfo(data.info.questID)) or ""
-	if level == -1 then
+	if level <= 0 then
 		-- keep the text untouched
 	elseif db.gossipColor then
 		button:SetText(format("|cff%s[%d%s]|r %s", GetQuestColorString(level), level, tagString, text))
