@@ -806,49 +806,27 @@ function Quester:QUEST_LOG_UPDATE()
 	blockQuestUpdate = nil
 end
 
-local function ProcessGossip(index, num, data)
-	assert(num == #data)
-	for _i = 1, num do
-		local button = GossipFrame_GetTitleButton(index)
-		if not button then return end
-		local text = button:GetText()
-		if text:match("^|c(.*)%[") then
-			local col, t = text:match("^|c(.*)%[[^%]]+%]|r%s?(.*)")
-			if not t then
-				col, t = text:match("^|c(.*)%[[^%]]+%]%s?(.*)")
-			end
-			if t then
-				text = t
-			end
-		elseif text:match("^%[") then
-			local t = text:match("^%[[^%]]+%]%s?(.*)")
-			if t then
-				text = t
-			end
-		end
-		local level = data and data[num] and data[num].questLevel or -1
-		if level == -1 then
-			-- keep the text untouched
-		elseif db.gossipColor then
-			button:SetText(format("|cff%s[%d]|r %s", GetQuestColorString(level), level, text))
-		else
-			button:SetText(format("[%d] %s", level, text))
-		end
-		button:Resize()
-		index = index + 1
+local function ProcessGossip(button, data)
+	local text = data.info.title
+	local level = data.info.questLevel or -1
+	local tagString = GetQuestTag(data.info.suggestedGroup, data.info.frequency, C_QuestLog.GetQuestTagInfo(data.info.questID)) or ""
+	if level == -1 then
+		-- keep the text untouched
+	elseif db.gossipColor then
+		button:SetText(format("|cff%s[%d%s]|r %s", GetQuestColorString(level), level, tagString, text))
+	else
+		button:SetText(format("[%d%s] %s", level, tagString, text))
 	end
-	return index + 1
+	button:Resize()
 end
 
 function Quester:GOSSIP_SHOW()
 	if not GossipFrame:IsVisible() or not db.questLevels then return end
-	local buttonindex = 1
-	local available, active = C_GossipInfo.GetNumAvailableQuests(), C_GossipInfo.GetNumActiveQuests()
-	if available and available > 0 then
-		buttonindex = ProcessGossip(buttonindex, available, C_GossipInfo.GetAvailableQuests())
-	end
-	if active and active > 0 then
-		buttonindex = ProcessGossip(buttonindex, active, C_GossipInfo.GetActiveQuests())
+	for _, frame in GossipFrame.GreetingPanel.ScrollBox:GetView():EnumerateFrames() do
+		local data = frame:GetElementData()
+		if data.buttonType == GOSSIP_BUTTON_TYPE_ACTIVE_QUEST or data.buttonType == GOSSIP_BUTTON_TYPE_AVAILABLE_QUEST then
+			ProcessGossip(frame, data)
+		end
 	end
 end
 
