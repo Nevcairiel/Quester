@@ -74,6 +74,8 @@ read_globals = {
 	"GossipFrame_GetTitleButton",
 	"InterfaceOptionsFrame_OpenToCategory",
 	"UIParent_ManageFramePositions",
+	"TooltipDataProcessor",
+	"TooltipUtil",
 
 	-- FrameXML Misc
 	"QuestDifficultyColors",

@@ -428,6 +428,9 @@ function Quester:OnInitialize()
 
 	self.eventFrame = CreateFrame("Frame", "QuesterEventFrame")
 	self.eventFrame:SetScript("OnEvent", function(frame, event, ...) Quester:HandleEvent(event, ...) end)
+
+	TooltipDataProcessor.AddLinePostCall(Enum.TooltipDataLineType.QuestTitle, self.TooltipLineProcessorQuestTitle)
+	TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, self.TooltipProcessorItem)
 end
 
 function Quester:RestoreTrackerPosition()
@@ -463,8 +466,6 @@ function Quester:OnEnable()
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
-	self:HookScript(GameTooltip, "OnTooltipSetItem")
-	self:HookScript(GameTooltip, "OnTooltipSetUnit")
 	self:SecureHook(QUEST_TRACKER_MODULE, "GetBlock", "QuestTrackerGetBlock")
 	self:SecureHook(QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
 	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
@@ -873,36 +874,33 @@ function Quester:QUEST_GREETING()
 	end
 end
 
-function Quester:OnTooltipSetUnit(tooltip, ...)
-	local numLines = tooltip:NumLines()
-	for i = 1, numLines do
-		local line = _G["GameTooltipTextLeft" .. i]
-		if line then
-			local text = line:GetText()
-			if quests[text] then
-				local index = C_QuestLog.GetLogIndexForQuestID(quests[text])
-				if index and index > 0 then
-					line:SetText(GetTaggedTitle(index, db.tooltipColor, true))
-					tooltip:Show()
-				end
-			end
+function Quester.TooltipLineProcessorQuestTitle(tooltip, lineData)
+	local self = Quester
+	if tooltip ~= GameTooltip then return end
+	if lineData.id then
+		local index = C_QuestLog.GetLogIndexForQuestID(lineData.id)
+		if index and index > 0 then
+			_G["GameTooltipTextLeft" .. lineData.lineIndex]:SetText(GetTaggedTitle(index, db.tooltipColor, true))
 		end
 	end
 end
 
-function Quester:OnTooltipSetItem(tooltip, ...)
-	local name = tooltip:GetItem()
-	if items[name] then
+function Quester.TooltipProcessorItem(tooltip, data)
+	local self = Quester
+	if tooltip ~= GameTooltip then return end
+
+	local name, link, id = TooltipUtil.GetDisplayedItem(tooltip)
+	if name and items[name] then
 		local it = items[name]
 		if progress[it] then
 			local index = C_QuestLog.GetLogIndexForQuestID(progress[it].qid)
 			if index and index > 0 then
+				tooltip:AddLine(" ")
 				tooltip:AddLine(GetTaggedTitle(index, db.tooltipColor, true))
 				local text = GetQuestLogLeaderBoard(progress[it].lid, index)
 				if text then
 					tooltip:AddLine(format(" - |cff%s%s|r", rgb2hex(ColorGradient(progress[it].perc, 1,0,0, 1,1,0, 0,1,0)), text))
 				end
-				tooltip:Show()
 			end
 		end
 	end
