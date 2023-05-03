@@ -163,7 +163,7 @@ local function GetChatTaggedTitle(i)
 	return format("(%s%s) %s", info.level, GetQuestTag(info.suggestedGroup, info.frequency), info.title)
 end
 
-local function GetQuestTagTexCoords(i)
+local function GetQuestTagAtlas(i)
 	if not i or i == 0 then return nil end
 	local info = C_QuestLog.GetInfo(i)
 	if not info or not info.questID then return end
@@ -192,8 +192,8 @@ local function GetQuestTagTexCoords(i)
 		tagID = faction == "Horde" and "HORDE" or "ALLIANCE"
 	end
 
-	if tagID and QUEST_TAG_TCOORDS[tagID] then
-		return QUEST_TAG_TCOORDS[tagID]
+	if tagID and QUEST_TAG_ATLAS[tagID] then
+		return QUEST_TAG_ATLAS[tagID]
 	end
 
 	return nil
@@ -857,16 +857,15 @@ function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 			HeaderText:__QuesterSetText(text)
 
 			if db.showTagIcons then
-				local tag = GetQuestTagTexCoords(questLogIndex)
-				if tag then
+				local tagAtlas = GetQuestTagAtlas(questLogIndex)
+				if tagAtlas then
 					if not HeaderText.__QuesterTagIcon then
 						HeaderText.__QuesterTagIcon = block:CreateTexture(nil, "ARTWORK")
 						HeaderText.__QuesterTagIcon:SetSize(18, 18)
-						HeaderText.__QuesterTagIcon:SetTexture("Interface\\QuestFrame\\QuestTypeIcons")
 						HeaderText.__QuesterTagIcon:SetPoint("TOP", HeaderText, "TOP", 0, 3)
 						HeaderText.__QuesterTagIcon:SetPoint("LEFT", HeaderText, "RIGHT", -2, 0)
 					end
-					HeaderText.__QuesterTagIcon:SetTexCoord(unpack(tag))
+					HeaderText.__QuesterTagIcon:SetAtlas(tagAtlas)
 					HeaderText.__QuesterTagIcon:Show()
 					HeaderText:SetWidth((block.lineWidth or OBJECTIVE_TRACKER_TEXT_WIDTH) - 6)
 				end
