@@ -402,9 +402,9 @@ function Quester:OnInitialize()
 	self:SetSinkStorage(self.db.profile.sinkOptions)
 
 	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("Quester", getOptionsTable)
-	local optFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Quester", "Quester")
+	local _, optionsCategory = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Quester", "Quester")
 
-	self:RegisterChatCommand("quester", function() InterfaceOptionsFrame_OpenToCategory(optFrame) end)
+	self:RegisterChatCommand("quester", function() Settings.OpenToCategory(optionsCategory) end)
 
 	self.eventFrame = CreateFrame("Frame", "QuesterEventFrame")
 	self.eventFrame:SetScript("OnEvent", function(frame, event, ...) Quester:HandleEvent(event, ...) end)
@@ -438,17 +438,14 @@ function Quester:OnEnable()
 
 	self:RawHookScript(UIErrorsFrame, "OnEvent", "UIErrorsFrame_OnEvent", true)
 
-	self:SecureHook(QUEST_TRACKER_MODULE, "GetBlock", "QuestTrackerGetBlock")
-	self:SecureHook(QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
-	self:SecureHook(QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(CAMPAIGN_QUEST_TRACKER_MODULE, "GetBlock", "QuestTrackerGetBlock")
-	self:SecureHook(CAMPAIGN_QUEST_TRACKER_MODULE, "OnFreeBlock", "QuestTrackerOnFreeBlock")
-	self:SecureHook(CAMPAIGN_QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddObjective", "ObjectiveTracker_AddObjective")
-	self:SecureHook(QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
-	self:SecureHook(BONUS_OBJECTIVE_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
-	self:SecureHook(WORLD_QUEST_TRACKER_MODULE, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
+	self:SecureHook(QuestObjectiveTracker, "GetBlock", "QuestTrackerGetBlock")
+	self:SecureHook(QuestObjectiveTracker, "OnFreeBlock", "QuestTrackerOnFreeBlock")
+	self:SecureHook(BonusObjectiveTracker, "GetBlock", "QuestTrackerGetBlock")
+	self:SecureHook(BonusObjectiveTracker, "OnFreeBlock", "QuestTrackerOnFreeBlock")
+	self:SecureHook(CampaignQuestObjectiveTracker, "GetBlock", "QuestTrackerGetBlock")
+	self:SecureHook(CampaignQuestObjectiveTracker, "OnFreeBlock", "QuestTrackerOnFreeBlock")
+	self:SecureHook(WorldQuestObjectiveTracker, "GetBlock", "QuestTrackerGetBlock")
+	self:SecureHook(WorldQuestObjectiveTracker, "OnFreeBlock", "QuestTrackerOnFreeBlock")
 	self:SecureHook("QuestLogQuests_Update")
 
 	self:SetupChatFilter()
@@ -709,10 +706,10 @@ function Quester:QUEST_LOG_UPDATE()
 	end
 
 	-- update the objective tracker
-	self:UpdateObjectiveTracker(QUEST_TRACKER_MODULE)
-	self:UpdateObjectiveTracker(CAMPAIGN_QUEST_TRACKER_MODULE)
-	self:UpdateObjectiveTracker(BONUS_OBJECTIVE_TRACKER_MODULE)
-	self:UpdateObjectiveTracker(WORLD_QUEST_TRACKER_MODULE)
+	self:UpdateObjectiveTracker(QuestObjectiveTracker)
+	self:UpdateObjectiveTracker(BonusObjectiveTracker)
+	self:UpdateObjectiveTracker(CampaignQuestObjectiveTracker)
+	self:UpdateObjectiveTracker(WorldQuestObjectiveTracker)
 
 	-- update any open dialogs
 	self:QUEST_GREETING()
@@ -821,11 +818,6 @@ function Quester:QuestLogQuests_Update()
 			-- update text
 			button.Text:SetText(text)
 
-			-- re-anchor check mark
-			if button.Check:IsShown() then
-				button.Check:SetPoint("LEFT", button.Text, button.Text:GetWrappedWidth() + 2, 0)
-			end
-
 			-- compute new button height, in case text wrapping changed
 			local totalHeight = button:GetHeight()
 			totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
@@ -839,7 +831,7 @@ function Quester:UpdateObjectiveTracker(tracker)
 	for _id, block in pairs(tracker.usedBlocks) do
 		if block.used then
 			for key, line in pairs(block.lines) do
-				self:ObjectiveTracker_AddObjective(tracker, block, key, line.Text:GetText(), line.type)
+				self:ObjectiveTracker_AddObjective(block, key, line.Text:GetText(), line.template)
 			end
 		end
 	end
@@ -863,25 +855,26 @@ function Quester:QuestTrackerHeaderSetText(HeaderText, text)
 						HeaderText.__QuesterTagIcon = block:CreateTexture(nil, "ARTWORK")
 						HeaderText.__QuesterTagIcon:SetSize(18, 18)
 						HeaderText.__QuesterTagIcon:SetPoint("TOP", HeaderText, "TOP", 0, 3)
-						HeaderText.__QuesterTagIcon:SetPoint("LEFT", HeaderText, "RIGHT", -2, 0)
+						HeaderText.__QuesterTagIcon:SetPoint("LEFT", HeaderText, "RIGHT", -16, 0)
 					end
 					HeaderText.__QuesterTagIcon:SetAtlas(tagAtlas)
 					HeaderText.__QuesterTagIcon:Show()
-					HeaderText:SetWidth((block.lineWidth or OBJECTIVE_TRACKER_TEXT_WIDTH) - 6)
 				end
 			end
 		end
 	end
 end
 
-function Quester:QuestTrackerGetBlock(mod, questID, overrideType, overrideTemplate)
-	local blockTemplate = overrideTemplate or mod.blockTemplate
+function Quester:QuestTrackerGetBlock(mod, questID, optTemplate)
+	local blockTemplate = optTemplate or mod.blockTemplate
 	if not mod.usedBlocks[blockTemplate] then return end
 	local block = mod.usedBlocks[blockTemplate][questID]
 	if block and block.HeaderText then
 		if not block.__QuesterHooked then
 			block.HeaderText.__QuesterSetText = block.HeaderText.SetText
 			self:SecureHook(block.HeaderText, "SetText", "QuestTrackerHeaderSetText")
+			self:SecureHook(block, "AddObjective", "ObjectiveTracker_AddObjective")
+			--self:SecureHook(block, "AddProgressBar", "ObjectiveTracker_AddProgressBar")
 			block.__QuesterHooked = true
 		end
 		block.__QuesterQuestTracker = true
@@ -911,12 +904,12 @@ end
 local objective_count = "^(%d+)/(%d+) "
 local objective_count_opt = "^" .. OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format("QuesterPattern"):gsub("%(", "%(%%("):gsub("%)", "%%)%)"):gsub("QuesterPattern", "(%%d+)/(%%d+) ")
 
-function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, lineType, useFullHeight, hideDash, colorStyle)
+function Quester:ObjectiveTracker_AddObjective(block, objectiveKey, text, template, useFullHeight, dashStyle, colorStyle, adjustForNoText, overrideHeight)
 	if colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
 		if db.questTrackerColor then
 			text = select(4, GetTaskInfo(block.id))
 			if text then
-				local line = obj:GetLine(block, objectiveKey, lineType)
+				local line = block:GetLine(objectiveKey, template)
 				line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
 			end
 		end
@@ -926,17 +919,9 @@ function Quester:ObjectiveTracker_AddObjective(obj, block, objectiveKey, text, l
 			if db.shortenNumbers or db.hide01 then
 				newText = text:gsub(objective_count, shorten_numbers):gsub(objective_count_opt, shorten_numbers_opt)
 			end
-			local line = obj:GetLine(block, objectiveKey, lineType)
+			local line = block:GetLine(objectiveKey, template)
 			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
 		end
-	end
-end
-
-function Quester:ObjectiveTracker_AddProgressBar(obj, block, line, questID)
-	if db.showObjectivePercentages then
-		line.ProgressBar.Bar:SetScript("OnEnter", nil)
-		line.ProgressBar.Bar:SetScript("OnLeave", nil)
-		line.ProgressBar.Bar.Label:Show()
 	end
 end
 

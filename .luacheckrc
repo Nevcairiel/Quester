@@ -66,23 +66,24 @@ read_globals = {
 	"UIErrorsFrame",
 	"UIParent",
 
+	"BonusObjectiveTracker",
+	"CampaignQuestObjectiveTracker",
+	"QuestObjectiveTracker",
+	"WorldQuestObjectiveTracker",
+
 	-- FrameXML Functions
 	"AutoCastShine_AutoCastStart",
 	"AutoCastShine_AutoCastStop",
 	"ChatFrame_AddMessageEventFilter",
 	"GetQuestDifficultyColor",
 	"GossipFrame_GetTitleButton",
-	"InterfaceOptionsFrame_OpenToCategory",
-	"UIParent_ManageFramePositions",
+	"Settings.OpenToCategory",
 	"TooltipDataProcessor",
 	"TooltipUtil",
+	"UIParent_ManageFramePositions",
 
 	-- FrameXML Misc
 	"QuestDifficultyColors",
-	"QUEST_TRACKER_MODULE",
-	"CAMPAIGN_QUEST_TRACKER_MODULE",
-	"BONUS_OBJECTIVE_TRACKER_MODULE",
-	"WORLD_QUEST_TRACKER_MODULE",
 
 	-- FrameXML Constants
 	"Enum",
