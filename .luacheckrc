@@ -32,6 +32,7 @@ read_globals = {
 	-- API function groups
 	"C_CampaignInfo",
 	"C_GossipInfo",
+	"C_Item",
 	"C_QuestLog",
 	"C_TaskQuest",
 
@@ -41,7 +42,6 @@ read_globals = {
 	"GetActiveTitle",
 	"GetAvailableLevel",
 	"GetAvailableTitle",
-	"GetItemInfo",
 	"GetNumQuestChoices",
 	"GetNumSubgroupMembers",
 	"GetQuestFactionGroup",

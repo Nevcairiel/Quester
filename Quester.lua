@@ -944,13 +944,14 @@ end
 
 function Quester:SetRewardHighlight(reward)
 	if not self.rewardHighlightFrame then
-		self.rewardHighlightFrame = CreateFrame("Frame", "QuesterRewardHighlight", QuestInfoRewardsFrame, "AutoCastShineTemplate")
-		self.rewardHighlightFrame:SetScript("OnHide", function(frame) AutoCastShine_AutoCastStop(frame) end)
+		self.rewardHighlightFrame = CreateFrame("Frame", "QuesterRewardHighlight", QuestInfoRewardsFrame, "AutoCastOverlayTemplate")
+		self.rewardHighlightFrame:SetScript("OnHide", function(frame) frame:ShowAutoCastEnabled(false) end)
 	end
+	self.rewardHighlightFrame:SetSize(42, 42)
 	self.rewardHighlightFrame:ClearAllPoints()
-	self.rewardHighlightFrame:SetAllPoints(reward)
+	self.rewardHighlightFrame:SetPoint("CENTER", reward, "CENTER")
 	self.rewardHighlightFrame:Show()
-	AutoCastShine_AutoCastStart(self.rewardHighlightFrame)
+	self.rewardHighlightFrame:ShowAutoCastEnabled(true)
 end
 
 function Quester:QUEST_COMPLETE()
@@ -963,7 +964,7 @@ function Quester:QUEST_COMPLETE()
 	local bestprice, bestitem = 0, 0
 	for i = 1, GetNumQuestChoices() do
 		local link, name, _, qty = GetQuestItemLink("choice", i), GetQuestItemInfo("choice", i)
-		local price = link and select(11, GetItemInfo(link))
+		local price = link and select(11, C_Item.GetItemInfo(link))
 		if not price then return end
 		price = price * (qty or 1)
 		if price > bestprice then
