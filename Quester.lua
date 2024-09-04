@@ -909,8 +909,10 @@ function Quester:ObjectiveTracker_AddObjective(block, objectiveKey, text, templa
 		if db.questTrackerColor then
 			text = select(4, GetTaskInfo(block.id))
 			if text then
-				local line = block:GetLine(objectiveKey, template)
-				line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
+				local line = block:GetExistingLine(objectiveKey)
+				if line then
+					line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
+				end
 			end
 		end
 	else
@@ -919,8 +921,10 @@ function Quester:ObjectiveTracker_AddObjective(block, objectiveKey, text, templa
 			if db.shortenNumbers or db.hide01 then
 				newText = text:gsub(objective_count, shorten_numbers):gsub(objective_count_opt, shorten_numbers_opt)
 			end
-			local line = block:GetLine(objectiveKey, template)
-			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
+			local line = block:GetExistingLine(objectiveKey)
+			if line then
+				line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
+			end
 		end
 	end
 end
