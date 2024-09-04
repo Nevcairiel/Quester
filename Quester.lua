@@ -905,14 +905,13 @@ local objective_count = "^(%d+)/(%d+) "
 local objective_count_opt = "^" .. OPTIONAL_QUEST_OBJECTIVE_DESCRIPTION:format("QuesterPattern"):gsub("%(", "%(%%("):gsub("%)", "%%)%)"):gsub("QuesterPattern", "(%%d+)/(%%d+) ")
 
 function Quester:ObjectiveTracker_AddObjective(block, objectiveKey, text, template, useFullHeight, dashStyle, colorStyle, adjustForNoText, overrideHeight)
+	local line = block:GetExistingLine(objectiveKey)
+	if not line then return end
 	if colorStyle == OBJECTIVE_TRACKER_COLOR["Header"] then
 		if db.questTrackerColor then
 			text = select(4, GetTaskInfo(block.id))
 			if text then
-				local line = block:GetExistingLine(objectiveKey)
-				if line then
-					line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
-				end
+				line.Text:SetText(format("|cff%s%s|r", rgb2hex(QuestDifficultyColors["difficult"]), text))
 			end
 		end
 	else
@@ -921,10 +920,7 @@ function Quester:ObjectiveTracker_AddObjective(block, objectiveKey, text, templa
 			if db.shortenNumbers or db.hide01 then
 				newText = text:gsub(objective_count, shorten_numbers):gsub(objective_count_opt, shorten_numbers_opt)
 			end
-			local line = block:GetExistingLine(objectiveKey)
-			if line then
-				line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
-			end
+			line.Text:SetText(format("|cff%s%s|r", rgb2hex(ColorGradient(progress[text].perc, 1,0,0, 1,1,0, 0,1,0)), newText or text))
 		end
 	end
 end
