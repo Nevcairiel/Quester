@@ -613,7 +613,7 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 		end
 		numNeeded, numItems = tonumber(numNeeded), tonumber(numItems)
 		--@debug@
-		if (numItems ~= info.numFulfilled or numNeeded ~= info.numRequired) and not (info.type == "object" and info.numFulfilled == 1 and info.numRequired == 1 and not info.finished) and not (info.type == "progressbar") then
+		if (numItems ~= info.numFulfilled or numNeeded ~= info.numRequired) and not (info.type == "object" and info.numFulfilled == 1 and info.numRequired == 1 and not info.finished) and (info.type ~= "progressbar") then
 			print("Quester: mismatching parsed and provided data on quest: " .. questTitle .. " (ID: " .. questID .. "), Objective: " .. info.text .. ", Type: " .. info.type .. ", Parsed: " .. tostring(numItems) .. "/" .. tostring(numNeeded) .. ", provided: " .. info.numFulfilled .. "/" .. info.numRequired)
 		end
 		--@end-debug@
