@@ -37,7 +37,7 @@ local defaults = {
 }
 
 -- "Deformat" the pattern to find their argument order
-local MatchObject, MatchMonster, MatchPlayer, MatchFaction, MatchErrObject, MatchErrFound, MatchErrKill, MatchErrCompleted
+local MatchObject, MatchMonster, MatchPlayer, MatchFaction, MatchProgressBar, MatchErrObject, MatchErrFound, MatchErrKill, MatchErrCompleted
 do
 	local function GetPermute3(pattern)
 		local one, two, three = pattern:match("%%(%d)%$.+%%(%d)%$.+%%(%d)%$")
@@ -67,6 +67,7 @@ do
 	MatchMonster = GetMatcher(QUEST_MONSTERS_KILLED)
 	MatchPlayer = GetMatcher(QUEST_PLAYERS_KILLED)
 	MatchFaction = GetMatcherNonGreedy(QUEST_FACTION_NEEDED, 1)
+	MatchProgressBar = GetMatcher(QUEST_PROGRESS_TOOLTIP_OBJECTIVE_PROGRESS)
 
 	MatchErrObject = GetMatcher(ERR_QUEST_ADD_ITEM_SII)
 	MatchErrFound = GetMatcher(ERR_QUEST_ADD_FOUND_SII)
@@ -591,6 +592,15 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 		elseif info.type == "reputation" then
 			itemDesc, numItems, numNeeded = MatchFaction(info.text)
 			numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
+		elseif info.type == "progressbar" then
+			itemDesc, numNeeded, numItems = MatchProgressBar(info.text)
+			if numItems then numItems = numItems:match("%d+") end
+			numNeeded = 100
+			--@debug@
+				if not (itemDesc and numItems) then
+					print("Quester: unable to parse progress bar: " .. info.text)
+				end
+			--@end-debug@
 		elseif info.type == "event" or info.type == "log" or info.type == "spell" or info.type == "progressbar" then
 			itemDesc, numNeeded, numItems = info.text, 1, (info.finished and 1 or 0)
 		else
@@ -600,21 +610,23 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 		end
 		numNeeded, numItems = tonumber(numNeeded), tonumber(numItems)
 		--@debug@
-		if (numItems ~= info.numFulfilled or numNeeded ~= info.numRequired) and not (info.type == "object" and info.numFulfilled == 1 and info.numRequired == 1 and not info.finished) then
-			print("Quester: mismatching parsed and provided data on quest: " .. questTitle .. " (ID: " .. questID .. "), Objective: " .. info.text .. ", Type: " .. info.type .. ", Parsed: " .. numItems .. "/" .. numNeeded .. ", provided: " .. info.numFulfilled .. "/" .. info.numRequired)
+		if (numItems ~= info.numFulfilled or numNeeded ~= info.numRequired) and not (info.type == "object" and info.numFulfilled == 1 and info.numRequired == 1 and not info.finished) and not (info.type == "progressbar") then
+			print("Quester: mismatching parsed and provided data on quest: " .. questTitle .. " (ID: " .. questID .. "), Objective: " .. info.text .. ", Type: " .. info.type .. ", Parsed: " .. tostring(numItems) .. "/" .. tostring(numNeeded) .. ", provided: " .. info.numFulfilled .. "/" .. info.numRequired)
 		end
 		--@end-debug@
 		if numNeeded and numNeeded > 0 and numItems then
-			if not progress[info.text] then
-				progress[info.text] = getTable()
+			local key = info.text
+			if info.type == "progressbar" and itemDesc then key = itemDesc end
+			if not progress[key] then
+				progress[key] = getTable()
 			end
-			progress[info.text].q = questTitle
-			progress[info.text].qid = questID
-			progress[info.text].lid = objIndex
-			progress[info.text].i = numItems
-			progress[info.text].n = numNeeded
-			progress[info.text].perc = numItems / numNeeded
-			progress[info.text].done = info.finished
+			progress[key].q = questTitle
+			progress[key].qid = questID
+			progress[key].lid = objIndex
+			progress[key].i = numItems
+			progress[key].n = numNeeded
+			progress[key].perc = numItems / numNeeded
+			progress[key].done = info.finished
 			local c = objKey or (questTitle .. info.text)
 			if info.finished then
 				complete[c] = true
