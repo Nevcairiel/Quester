@@ -605,7 +605,7 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 			itemDesc, numNeeded, numItems = info.text, 1, (info.finished and 1 or 0)
 		else
 			--@debug@
-			if info.type then
+			if info.type and info.type ~= "" then
 				print("Unknown quest objective type: " .. info.type .. ", on quest: " .. questTitle .. ", objective: " .. info.text)
 			end
 			--@end-debug@
