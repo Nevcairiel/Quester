@@ -619,7 +619,6 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 		--@end-debug@
 		if numNeeded and numNeeded > 0 and numItems then
 			local key = info.text
-			if info.type == "progressbar" and itemDesc then key = itemDesc end
 			if not progress[key] then
 				progress[key] = getTable()
 			end
@@ -630,6 +629,10 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 			progress[key].n = numNeeded
 			progress[key].perc = numItems / numNeeded
 			progress[key].done = info.finished
+
+			-- alias for progressbar handling
+			if info.type == "progressbar" and itemDesc then progress[itemDesc] = progress[key] end
+
 			local c = objKey or (questTitle .. info.text)
 			if info.finished then
 				complete[c] = true
