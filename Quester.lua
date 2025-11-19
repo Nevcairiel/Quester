@@ -596,7 +596,8 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 			end
 		elseif info.type == "reputation" then
 			itemDesc, numItems, numNeeded = MatchFaction(info.text)
-			numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
+			--numItems, numNeeded = factionLabels[numItems], factionLabels[numNeeded]
+			numItems, numNeeded = info.numFulfilled, info.numRequired
 		elseif info.type == "progressbar" then
 			itemDesc, numNeeded, numItems = MatchProgressBar(info.text)
 			if numItems then numItems = numItems:match("%d+") end
@@ -606,8 +607,8 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 					print("Quester: unable to parse progress bar: " .. info.text)
 				end
 			--@end-debug@
-		elseif info.type == "event" or info.type == "log" or info.type == "spell" or info.type == "progressbar" then
-			itemDesc, numNeeded, numItems = info.text, 1, (info.finished and 1 or 0)
+		elseif info.type == "event" or info.type == "log" or info.type == "spell" then
+			itemDesc, numNeeded, numItems = info.text, info.numRequired or 1, info.numFulfilled or (info.finished and 1 or 0)
 		else
 			--@debug@
 			if info.type and info.type ~= "" then
