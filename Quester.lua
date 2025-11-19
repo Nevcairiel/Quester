@@ -200,6 +200,7 @@ local function GetQuestTagAtlas(i)
 	return nil
 end
 
+--luacheck: ignore factionLabels
 -- faction data for reputation quests
 local factionLabels = {}
 do
