@@ -561,7 +561,12 @@ local function processObjective(questID, questTitle, isTask, objIndex, info)
 				end
 				items[itemDesc] = info.text -- used for tooltips
 			else
-				numItems, numNeeded = (info.finished and 1 or 0), 1
+				numItems, numNeeded = info.numFulfilled, info.numRequired
+
+				-- override common objective weirdness
+				if numNeeded == 1 and numItems == 1 and not info.finished then
+					numItems = 0
+				end
 			end
 		elseif info.type == "monster" then
 			itemDesc, numItems, numNeeded = MatchMonster(info.text)
