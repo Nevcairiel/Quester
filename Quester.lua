@@ -794,7 +794,7 @@ end
 function Quester.TooltipLineProcessorQuestTitle(tooltip, lineData)
 	local self = Quester
 	if tooltip ~= GameTooltip then return end
-	if lineData.id then
+	if lineData.id and not issecretvalue(lineData.id) then
 		local index = C_QuestLog.GetLogIndexForQuestID(lineData.id)
 		if index and index > 0 then
 			_G["GameTooltipTextLeft" .. lineData.lineIndex]:SetText(GetTaggedTitle(index, db.tooltipColor, true))

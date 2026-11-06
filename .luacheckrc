@@ -25,6 +25,7 @@ read_globals = {
 	"hooksecurefunc",
 	"tinsert",
 	"wipe",
+	"issecretvalue",
 
 	-- Third Party Addon/Libraries
 	"LibStub",
