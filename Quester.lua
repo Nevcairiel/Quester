@@ -1,11 +1,13 @@
 local Quester = LibStub("AceAddon-3.0"):NewAddon("Quester", "AceHook-3.0", "AceConsole-3.0", "LibSink-2.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("Quester")
 
+local WoWForever = (WOW_PROJECT_ID == WOW_PROJECT_CAMELOT)
+
 local db
 local defaults = {
 	profile = {
 		-- options
-		questLevels = false,
+		questLevels = WoWForever,
 		removeComplete = true,
 		highlightReward = true,
 		showObjectivePercentages = true,
