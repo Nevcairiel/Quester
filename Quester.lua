@@ -9,6 +9,8 @@ local defaults = {
 		-- options
 		questLevels = WoWForever,
 		removeComplete = true,
+		autoTrack = false,
+		autoTrackRadius = 300,
 		highlightReward = true,
 		showObjectivePercentages = true,
 		hide01 = true,
@@ -35,7 +37,12 @@ local defaults = {
 		sinkOptions = {
 			sink20OutputSink = "UIErrorsFrame",
 		},
-	}
+	},
+	char = {
+		-- auto-tracking: quests the player tracked manually, and nearby quests the player untracked manually
+		autoTrackPinned = {},
+		autoTrackHidden = {},
+	},
 }
 
 -- "Deformat" the pattern to find their argument order
@@ -247,6 +254,26 @@ local function getOptionsTable()
 				order = 3,
 				width = "full",
 			},
+			autoTrack = {
+				name = L["Automatically track nearby quests"],
+				desc = L["Track quests when you get close to their objectives, and stop tracking them when you move away. Quests you track or untrack yourself are left alone."],
+				type = "toggle",
+				arg = "autoTrack",
+				set = function(k, v) db[k.arg] = v Quester:UpdateAutoTrack() end,
+				order = 3.1,
+				width = "full",
+			},
+			autoTrackRadius = {
+				name = L["Tracking distance"],
+				desc = L["Quests closer than this are tracked."],
+				type = "range",
+				arg = "autoTrackRadius",
+				min = 50,
+				max = 1000,
+				step = 10,
+				disabled = function() return not db.autoTrack end,
+				order = 3.2,
+			},
 			highlightReward = {
 				name = L["Highlight most valuable reward"],
 				desc = L["Highlight the reward with the highest vendor value when completing a quest."],
@@ -432,6 +459,9 @@ function Quester:OnEnable()
 	self:RegisterEvent("QUEST_LOG_UPDATE")
 	self:RegisterEvent("UNIT_QUEST_LOG_CHANGED")
 	self:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
+	self:RegisterEvent("QUEST_ACCEPTED")
+	self:RegisterEvent("QUEST_REMOVED")
+	self:RegisterEvent("QUEST_WATCH_UPDATE")
 
 	self:RegisterEvent("PLAYER_LEAVING_WORLD")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -451,16 +481,21 @@ function Quester:OnEnable()
 	self:SecureHook(WorldQuestObjectiveTracker, "GetBlock", "QuestTrackerGetBlock")
 	self:SecureHook(WorldQuestObjectiveTracker, "OnFreeBlock", "QuestTrackerOnFreeBlock")
 	self:SecureHook("QuestLogQuests_Update")
+	self:SecureHook(C_QuestLog, "AddQuestWatch", "OnQuestWatchAdded")
+	self:SecureHook(C_QuestLog, "RemoveQuestWatch", "OnQuestWatchRemoved")
 
 	self:SetupChatFilter()
 
 	if QuestFrameRewardPanel:IsVisible() then
 		self:QUEST_COMPLETE()
 	end
+
+	self:UpdateAutoTrack()
 end
 
 function Quester:OnDisable()
 	self.eventFrame:UnregisterAllEvents()
+	self:StopAutoTrack()
 end
 
 function Quester:UIErrorsFrame_OnEvent(frame, event, ...)
@@ -542,6 +577,172 @@ end
 
 function Quester:QUEST_WATCH_LIST_CHANGED()
 	self:QUEST_LOG_UPDATE()
+end
+
+-- auto-tracking of nearby quests
+local AUTO_TRACK_INTERVAL = 2 -- seconds between scans
+local AUTO_TRACK_UNTRACK_FACTOR = 1.25 -- quests are untracked beyond this multiple of the tracking distance
+local autoTrackEnabled -- nil until the first update, so a login with the option on keeps the stored marks
+local autoTrackTicker
+
+local ownWatchChange = false
+local questGameWatchTimes = {}
+
+-- all watch changes made by Quester go through here, so the hooks below can tell them apart from manual changes
+function Quester:SetQuestWatch(questID, watched)
+	-- watch changes fire events synchronously, which can end up back in here
+	local prevOwnWatchChange = ownWatchChange
+	ownWatchChange = true
+	if watched then
+		C_QuestLog.AddQuestWatch(questID)
+	else
+		C_QuestLog.RemoveQuestWatch(questID)
+	end
+	ownWatchChange = prevOwnWatchChange
+end
+
+-- finished quests are not auto-tracked, only the "Un-track complete quests" option deals with them
+-- Quests without real objectives (ie. deliveries) are always complete, and are treated like unfinished quests
+-- instead, so they get tracked near their turn-in. These quests have no objectives at all, or only objectives
+-- of the type "log", which just repeat the quest text and are not shown as objectives by the game either.
+local function IsQuestFinished(questID)
+	if C_QuestLog.IsFailed(questID) then return true end
+	if not C_QuestLog.IsComplete(questID) then return false end
+
+	local objectives = C_QuestLog.GetQuestObjectives(questID)
+	if objectives then
+		for _, objective in ipairs(objectives) do
+			if objective.type ~= "log" then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function Quester:OnQuestWatchAdded(questID)
+	if ownWatchChange or not db.autoTrack or not questID then return end
+
+	-- the game tracks quests on its own from its QUEST_ACCEPTED and QUEST_WATCH_UPDATE handlers, which may
+	-- run before or after ours, so wait a frame before deciding if this was a manual change
+	local now = GetTime()
+	C_Timer.After(0, function()
+		if questGameWatchTimes[questID] == now then return end
+		if not db.autoTrack or C_QuestLog.GetQuestWatchType(questID) == nil then return end
+
+		local char = self.db.char
+		char.autoTrackPinned[questID] = true
+		char.autoTrackHidden[questID] = nil
+	end)
+end
+
+function Quester:OnQuestWatchRemoved(questID)
+	if ownWatchChange or not db.autoTrack or not questID then return end
+
+	local char = self.db.char
+	char.autoTrackPinned[questID] = nil
+	if C_QuestLog.IsOnQuest(questID) and not IsQuestFinished(questID) then
+		-- stays hidden until the player moves out of range
+		char.autoTrackHidden[questID] = true
+	end
+end
+
+-- the game tracks a quest when it is accepted
+function Quester:QUEST_ACCEPTED(questID)
+	questGameWatchTimes[questID] = GetTime()
+end
+
+-- the game tracks a quest (again) when progress is made on it
+function Quester:QUEST_WATCH_UPDATE(questID)
+	questGameWatchTimes[questID] = GetTime()
+end
+
+function Quester:QUEST_REMOVED(questID)
+	local char = self.db.char
+	char.autoTrackPinned[questID] = nil
+	char.autoTrackHidden[questID] = nil
+	questGameWatchTimes[questID] = nil
+end
+
+function Quester:UpdateAutoTrack()
+	local enabled = db.autoTrack and true or false
+	if enabled and autoTrackEnabled == false then
+		-- manual changes are only recorded while the option is on, start from a clean slate
+		wipe(self.db.char.autoTrackPinned)
+		wipe(self.db.char.autoTrackHidden)
+	end
+	autoTrackEnabled = enabled
+
+	if enabled and not autoTrackTicker then
+		autoTrackTicker = C_Timer.NewTicker(AUTO_TRACK_INTERVAL, function() Quester:AutoTrackScan() end)
+	elseif not enabled and autoTrackTicker then
+		autoTrackTicker:Cancel()
+		autoTrackTicker = nil
+	end
+end
+
+local autoTrackAdd, autoTrackRemove = {}, {}
+function Quester:AutoTrackScan()
+	-- no scanning during loading screens or while the quest log is being processed
+	if blockQuestUpdate then return end
+
+	local char = self.db.char
+	local pinned, hidden = char.autoTrackPinned, char.autoTrackHidden
+
+	local trackDistSq = db.autoTrackRadius * db.autoTrackRadius
+	local untrackDistSq = trackDistSq * AUTO_TRACK_UNTRACK_FACTOR * AUTO_TRACK_UNTRACK_FACTOR
+	local superTrackedQuestID = C_SuperTrack.GetSuperTrackedQuestID()
+
+	-- collect the changes first, changing a watch triggers quest log processing
+	wipe(autoTrackAdd)
+	wipe(autoTrackRemove)
+	for index = 1, C_QuestLog.GetNumQuestLogEntries() do
+		local info = C_QuestLog.GetInfo(index)
+		if info and not info.isHeader and not info.isHidden and not info.isTask and not info.isBounty and info.questID and info.questID ~= 0 then
+			local questID = info.questID
+			if IsQuestFinished(questID) then
+				-- finished quests are only handled by the "Un-track complete quests" option
+				pinned[questID] = nil
+				hidden[questID] = nil
+			elseif not pinned[questID] then
+				local distSq, onContinent = C_QuestLog.GetDistanceSqToQuest(questID)
+				-- quests without a known distance are left alone
+				if distSq then
+					local watched = C_QuestLog.GetQuestWatchType(questID) ~= nil
+					if onContinent == false or distSq > untrackDistSq then
+						hidden[questID] = nil
+						if watched and questID ~= superTrackedQuestID then
+							tinsert(autoTrackRemove, questID)
+						end
+					elseif distSq <= trackDistSq and not watched and not hidden[questID] then
+						tinsert(autoTrackAdd, questID)
+					end
+				end
+			end
+		end
+	end
+
+	if #autoTrackRemove == 0 and #autoTrackAdd == 0 then return end
+
+	-- hold off quest log processing until all changes are applied, and then run it once
+	blockQuestUpdate = true
+	for _, questID in ipairs(autoTrackRemove) do
+		self:SetQuestWatch(questID, false)
+	end
+	for _, questID in ipairs(autoTrackAdd) do
+		if C_QuestLog.GetNumQuestWatches() >= Constants.QuestWatchConsts.MAX_QUEST_WATCHES then break end
+		self:SetQuestWatch(questID, true)
+	end
+	blockQuestUpdate = nil
+	self:QUEST_LOG_UPDATE()
+end
+
+function Quester:StopAutoTrack()
+	if autoTrackTicker then
+		autoTrackTicker:Cancel()
+		autoTrackTicker = nil
+	end
+	autoTrackEnabled = false
 end
 
 function Quester:PLAYER_LEAVING_WORLD()
@@ -698,7 +899,7 @@ function Quester:QUEST_LOG_UPDATE()
 							PlayQuestSound(QUESTER_SOUND_JOBS_DONE)
 						end
 						if db.removeComplete then
-							C_QuestLog.RemoveQuestWatch(info.questID)
+							self:SetQuestWatch(info.questID, false)
 						end
 					end
 				end

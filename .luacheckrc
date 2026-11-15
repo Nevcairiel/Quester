@@ -35,10 +35,13 @@ read_globals = {
 	"C_GossipInfo",
 	"C_Item",
 	"C_QuestLog",
+	"C_SuperTrack",
 	"C_TaskQuest",
+	"C_Timer",
 
 	-- API functions
 	"CreateFrame",
+	"GetTime",
 	"GetActiveLevel",
 	"GetActiveTitle",
 	"GetAvailableLevel",
@@ -87,6 +90,7 @@ read_globals = {
 	"QuestDifficultyColors",
 
 	-- FrameXML Constants
+	"Constants",
 	"Enum",
 	"ERR_QUEST_ADD_FOUND_SII",
 	"ERR_QUEST_ADD_ITEM_SII",
