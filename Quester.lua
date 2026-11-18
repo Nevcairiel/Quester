@@ -606,7 +606,8 @@ local autoTrackEnabled -- nil until the first update, so a login with the option
 local autoTrackTicker
 
 local ownWatchChange = false
-local questGameWatchTimes = {}
+local questGameWatch = {} -- quests the game is tracking on its own in the current event
+local questPendingWatch = {} -- quests that were tracked by someone else, and may turn out to be manual
 local questProgressTimes = {}
 
 -- all watch changes made by Quester go through here, so the hooks below can tell them apart from manual changes
@@ -645,10 +646,16 @@ function Quester:OnQuestWatchAdded(questID)
 	if ownWatchChange or not db.autoTrack or not questID then return end
 
 	-- the game tracks quests on its own from its QUEST_ACCEPTED and QUEST_WATCH_UPDATE handlers, which may
-	-- run before or after ours, so wait a frame before deciding if this was a manual change
-	local now = GetTime()
+	-- run before or after ours. If ours ran first, the quest is already marked.
+	if questGameWatch[questID] then return end
+
+	-- otherwise our handler clears the pending mark again when it runs for the same event,
+	-- and what is still pending a frame later was a manual change
+	if questPendingWatch[questID] then return end
+	questPendingWatch[questID] = true
 	C_Timer.After(0, function()
-		if questGameWatchTimes[questID] == now then return end
+		if not questPendingWatch[questID] then return end
+		questPendingWatch[questID] = nil
 		if not db.autoTrack or C_QuestLog.GetQuestWatchType(questID) == nil then return end
 
 		local char = self.db.char
@@ -668,14 +675,23 @@ function Quester:OnQuestWatchRemoved(questID)
 	end
 end
 
+-- marks a quest as being tracked by the game itself, for the handlers of the current event
+local function MarkGameWatch(questID)
+	questPendingWatch[questID] = nil
+	if not questGameWatch[questID] then
+		questGameWatch[questID] = true
+		C_Timer.After(0, function() questGameWatch[questID] = nil end)
+	end
+end
+
 -- the game tracks a quest when it is accepted
 function Quester:QUEST_ACCEPTED(questID)
-	questGameWatchTimes[questID] = GetTime()
+	MarkGameWatch(questID)
 end
 
 -- the game tracks a quest (again) when progress is made on it
 function Quester:QUEST_WATCH_UPDATE(questID)
-	questGameWatchTimes[questID] = GetTime()
+	MarkGameWatch(questID)
 	questProgressTimes[questID] = GetTime()
 end
 
@@ -683,7 +699,8 @@ function Quester:QUEST_REMOVED(questID)
 	local char = self.db.char
 	char.autoTrackPinned[questID] = nil
 	char.autoTrackHidden[questID] = nil
-	questGameWatchTimes[questID] = nil
+	questGameWatch[questID] = nil
+	questPendingWatch[questID] = nil
 	questProgressTimes[questID] = nil
 end
 
