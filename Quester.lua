@@ -170,7 +170,13 @@ local function GetChatTaggedTitle(i)
 	if not i or i == 0 then return nil end
 	local info = C_QuestLog.GetInfo(i)
 	if not info or info.isHeader or not info.title then return end
-	return format("(%s%s) %s", info.level, GetQuestTag(info.suggestedGroup, info.frequency), info.title)
+	local level = info.level
+	if not level or level <= 0 then
+		level = C_QuestLog.GetQuestDifficultyLevel(info.questID)
+	end
+	-- no known level, leave the title alone
+	if not level or level <= 0 then return end
+	return format("(%s%s) %s", level, GetQuestTag(info.suggestedGroup, info.frequency), info.title)
 end
 
 local function GetQuestTagAtlas(i)
@@ -1162,13 +1168,27 @@ function Quester:ObjectiveTracker_AddObjective(block, objectiveKey, text, templa
 end
 
 function Quester:SetupChatFilter()
-	local function process(full, level, partial)
-		return full:gsub(partial, quests[partial] and GetChatTaggedTitle(C_QuestLog.GetLogIndexForQuestID(quests[partial])) or "("..level..") "..partial)
+	local function process(prefix, questID, level, title, suffix)
+		questID, level = tonumber(questID), tonumber(level)
+		if not questID then return end
+
+		-- quests in the quest log have the most accurate information
+		local text = GetChatTaggedTitle(C_QuestLog.GetLogIndexForQuestID(questID))
+		if not text then
+			-- the level in the link is often 0, ask the game instead
+			if not level or level <= 0 then
+				level = C_QuestLog.GetQuestDifficultyLevel(questID)
+			end
+			-- no known level, leave the link alone
+			if not level or level <= 0 then return end
+			text = format("(%d) %s", level, title)
+		end
+		return prefix .. text .. suffix
 	end
 	local function filter(frame, event, msg, ...)
-		if msg then
+		if msg and not issecretvalue(msg) then
 			if db.questLevels then
-				msg = msg:gsub("(|c%x+|Hquest:%d+:(%d+)|h%[([^|]*)%]|h|r)", process)
+				msg = msg:gsub("(|c[%w_:]+|Hquest:(%d+):(%-?%d+)[^|]*|h%[)([^|]*)(%]|h|r)", process)
 			end
 			return false, msg, ...
 		end
