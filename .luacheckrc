@@ -81,6 +81,7 @@ read_globals = {
 	"ChatFrame_AddMessageEventFilter",
 	"GetQuestDifficultyColor",
 	"GossipFrame_GetTitleButton",
+	"QuestUtils_DecorateQuestText",
 	"Settings.OpenToCategory",
 	"TooltipDataProcessor",
 	"TooltipUtil",

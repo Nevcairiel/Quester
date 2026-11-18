@@ -145,22 +145,38 @@ local function GetQuestColorString(level, scaling, questID)
 	return rgb2hex(GetQuestDifficultyColor(level, scaling, questID))
 end
 
-local function GetTaggedTitle(i, color, tag)
+-- returns the level of a quest in the quest log, or nil if the game does not know one
+local function GetQuestLevel(info)
+	local level = info.level
+	if not level or level <= 0 then
+		-- the quest log can report 0, ask the game instead
+		level = C_QuestLog.GetQuestDifficultyLevel(info.questID)
+	end
+	if level and level > 0 then
+		return level
+	end
+end
+
+-- decorate adds the decoration the game puts on titles in the quest log (ie. the icon of replayable quests)
+local function GetTaggedTitle(i, color, tag, decorate)
 	if not i or i == 0 then return nil end
 	local info = C_QuestLog.GetInfo(i)
 	if not info then return end
 
 	local title = info.title
 	if not info.isHeader and title and info.questID then
+		if decorate then
+			-- same arguments as the quest log: small icon, replayable decoration only
+			title = QuestUtils_DecorateQuestText(info.questID, title, false, false, true, true)
+		end
 		local tagString = tag and GetQuestTag(info.suggestedGroup, info.frequency, C_QuestLog.GetQuestTagInfo(info.questID)) or ""
+		-- without a known level, the title is left without one
+		local level = db.questLevels and GetQuestLevel(info)
+		if level then
+			title = format("[%s%s] %s", level, tagString, title)
+		end
 		if color then
-			if db.questLevels then
-				title = format("|cff%s[%s%s] %s|r", GetQuestColorString(info.level, info.isScaling, info.questID), info.level, tagString, title)
-			else
-				title = format("|cff%s%s|r", GetQuestColorString(info.level, info.isScaling, info.questID), title)
-			end
-		elseif db.questLevels then
-			title = format("[%s%s] %s", info.level, tagString, title)
+			title = format("|cff%s%s|r", GetQuestColorString(info.level, info.isScaling, info.questID), title)
 		end
 	end
 	return title
@@ -170,12 +186,9 @@ local function GetChatTaggedTitle(i)
 	if not i or i == 0 then return nil end
 	local info = C_QuestLog.GetInfo(i)
 	if not info or info.isHeader or not info.title then return end
-	local level = info.level
-	if not level or level <= 0 then
-		level = C_QuestLog.GetQuestDifficultyLevel(info.questID)
-	end
+	local level = GetQuestLevel(info)
 	-- no known level, leave the title alone
-	if not level or level <= 0 then return end
+	if not level then return end
 	return format("(%s%s) %s", level, GetQuestTag(info.suggestedGroup, info.frequency), info.title)
 end
 
@@ -995,7 +1008,7 @@ function Quester:QUEST_GREETING()
 		else
 			title, level = GetAvailableTitle(button:GetID()), GetAvailableLevel(button:GetID())
 		end
-		if level == -1 then
+		if not level or level <= 0 then
 			-- keep the text untouched
 		elseif db.gossipColor then
 			button:SetText(format("|cff%s[%d]|r %s", GetQuestColorString(level), level, title))
@@ -1041,29 +1054,30 @@ end
 function Quester:QuestLogQuests_Update()
 	for button in QuestScrollFrame.titleFramePool:EnumerateActive() do
 		if button and button:IsShown() then
-			local text = GetTaggedTitle(button.questLogIndex, false, false)
-
-			local partyMembersOnQuest = 0
-			for j=1, GetNumSubgroupMembers() do
-				if C_QuestLog.IsUnitOnQuest("party"..j, button.questID) then
-					partyMembersOnQuest = partyMembersOnQuest + 1
+			local text = GetTaggedTitle(button.questLogIndex, false, false, true)
+			if text then
+				local partyMembersOnQuest = 0
+				for j=1, GetNumSubgroupMembers() do
+					if C_QuestLog.IsUnitOnQuest("party"..j, button.questID) then
+						partyMembersOnQuest = partyMembersOnQuest + 1
+					end
 				end
+
+				if partyMembersOnQuest > 0 then
+					text = "["..partyMembersOnQuest.."] "..text
+				end
+
+				-- store previous text height, so we can compute the new total height
+				local prevTextHeight = button.Text:GetHeight()
+
+				-- update text
+				button.Text:SetText(text)
+
+				-- compute new button height, in case text wrapping changed
+				local totalHeight = button:GetHeight()
+				totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
+				button:SetHeight(totalHeight)
 			end
-
-			if partyMembersOnQuest > 0 then
-				text = "["..partyMembersOnQuest.."] "..text
-			end
-
-			-- store previous text height, so we can compute the new total height
-			local prevTextHeight = button.Text:GetHeight()
-
-			-- update text
-			button.Text:SetText(text)
-
-			-- compute new button height, in case text wrapping changed
-			local totalHeight = button:GetHeight()
-			totalHeight = totalHeight - prevTextHeight + button.Text:GetHeight()
-			button:SetHeight(totalHeight)
 		end
 	end
 	QuestScrollFrame.Contents:Layout()
