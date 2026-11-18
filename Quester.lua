@@ -582,11 +582,13 @@ end
 -- auto-tracking of nearby quests
 local AUTO_TRACK_INTERVAL = 2 -- seconds between scans
 local AUTO_TRACK_UNTRACK_FACTOR = 1.25 -- quests are untracked beyond this multiple of the tracking distance
+local AUTO_TRACK_PROGRESS_HOLD = 180 -- seconds a quest stays tracked after progress was made on it, even when out of range
 local autoTrackEnabled -- nil until the first update, so a login with the option on keeps the stored marks
 local autoTrackTicker
 
 local ownWatchChange = false
 local questGameWatchTimes = {}
+local questProgressTimes = {}
 
 -- all watch changes made by Quester go through here, so the hooks below can tell them apart from manual changes
 function Quester:SetQuestWatch(questID, watched)
@@ -655,6 +657,7 @@ end
 -- the game tracks a quest (again) when progress is made on it
 function Quester:QUEST_WATCH_UPDATE(questID)
 	questGameWatchTimes[questID] = GetTime()
+	questProgressTimes[questID] = GetTime()
 end
 
 function Quester:QUEST_REMOVED(questID)
@@ -662,6 +665,7 @@ function Quester:QUEST_REMOVED(questID)
 	char.autoTrackPinned[questID] = nil
 	char.autoTrackHidden[questID] = nil
 	questGameWatchTimes[questID] = nil
+	questProgressTimes[questID] = nil
 end
 
 function Quester:UpdateAutoTrack()
@@ -692,6 +696,7 @@ function Quester:AutoTrackScan()
 	local trackDistSq = db.autoTrackRadius * db.autoTrackRadius
 	local untrackDistSq = trackDistSq * AUTO_TRACK_UNTRACK_FACTOR * AUTO_TRACK_UNTRACK_FACTOR
 	local superTrackedQuestID = C_SuperTrack.GetSuperTrackedQuestID()
+	local now = GetTime()
 
 	-- collect the changes first, changing a watch triggers quest log processing
 	wipe(autoTrackAdd)
@@ -711,7 +716,10 @@ function Quester:AutoTrackScan()
 					local watched = C_QuestLog.GetQuestWatchType(questID) ~= nil
 					if onContinent == false or distSq > untrackDistSq then
 						hidden[questID] = nil
-						if watched and questID ~= superTrackedQuestID then
+						-- quests with recent progress stay tracked for a while, the game tracks them when progress is made
+						local progressTime = questProgressTimes[questID]
+						local recentProgress = progressTime and (now - progressTime) < AUTO_TRACK_PROGRESS_HOLD
+						if watched and questID ~= superTrackedQuestID and not recentProgress then
 							tinsert(autoTrackRemove, questID)
 						end
 					elseif distSq <= trackDistSq and not watched and not hidden[questID] then
